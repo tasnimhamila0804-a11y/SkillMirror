@@ -1,0 +1,153 @@
+@if (loading()) {
+  <div class="loading-panel"><span class="spinner lg"></span>Chargement de votre progression…</div>
+} @else if (report(); as data) {
+  <div class="fade-in">
+    <div class="page-head">
+      <h1>Ma progression</h1>
+      <p>L'évolution de vos compétences, de vos scores et de vos preuves — tout est calculé côté backend.</p>
+    </div>
+
+    <div class="grid grid-4">
+      <div class="stat-card">
+        <span class="stat-label">Parcours actifs</span>
+        <span class="stat-value violet">{{ data.paths.length }}</span>
+        <span class="stat-sub">{{ data.paths.filter(p => p.status === 'VALIDATED' || p.status === 'COMPLETED').length }} validé(s)</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Tâches réalisées</span>
+        <span class="stat-value">{{ data.totalTasks === 0 ? 0 : Math.round((data.doneTasks * 100) / data.totalTasks) }}%</span>
+        <span class="stat-sub">{{ data.doneTasks }}/{{ data.totalTasks }} tâches</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Preuves vérifiées</span>
+        <span class="stat-value mint">{{ data.verifiedProofs }}</span>
+        <span class="stat-sub">{{ data.evidences.length }} preuve(s) soumise(s)</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Score le plus récent</span>
+        <span class="stat-value">{{ data.scoreHistory.length > 0 ? data.scoreHistory[0].score + '/100' : '—' }}</span>
+        <span class="stat-sub">
+          {{ data.scoreHistory.length > 0 ? data.scoreHistory[0].jobTitle : 'Aucune analyse' }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Score history -->
+    <div class="card mt-3">
+      <div class="card-title">Évolution des scores de compatibilité</div>
+      @if (chartPoints().length > 0) {
+        <svg class="score-chart mt-2" viewBox="0 0 520 170" role="img"
+             aria-label="Graphique de l'évolution de vos scores de compatibilité">
+          <line x1="28" y1="142" x2="492" y2="142" stroke="#E6E4F0" />
+          <line x1="28" y1="100" x2="492" y2="100" stroke="#F2F1F7" />
+          <line x1="28" y1="57" x2="492" y2="57" stroke="#F2F1F7" />
+          <line x1="28" y1="14" x2="492" y2="14" stroke="#E6E4F0" />
+          <text x="4" y="146" class="axis">0</text>
+          <text x="4" y="18" class="axis">100</text>
+          @if (chartPoints().length > 1) {
+            <polyline [attr.points]="polyline()" fill="none" stroke="#7C5CFC" stroke-width="2.5"
+                      stroke-linejoin="round" stroke-linecap="round" />
+          }
+          @for (point of chartPoints(); track point.date) {
+            <circle [attr.cx]="point.x" [attr.cy]="point.y" r="5" fill="#fff" stroke="#7C5CFC" stroke-width="2.5">
+              <title>{{ point.label }} — {{ point.score }}/100 ({{ shortDate(point.date) }})</title>
+            </circle>
+            <text [attr.x]="point.x" [attr.y]="point.y - 12" class="point-label">{{ point.score }}</text>
+          }
+        </svg>
+        <div class="row wrap mt-1 tiny muted">
+          @for (point of chartPoints(); track point.date) {
+            <span>{{ shortDate(point.date) }} — {{ point.label }} ({{ point.score }})</span>
+          }
+        </div>
+      } @else {
+        <p class="small muted mt-2">
+          Lancez une analyse pour faire apparaître la courbe de vos scores.
+        </p>
+      }
+    </div>
+
+    <div class="grid grid-2 mt-3">
+      <!-- Paths -->
+      <div class="card">
+        <div class="card-title">Parcours &amp; tâches</div>
+        @if (data.paths.length > 0) {
+          <div class="col mt-2" style="gap: 10px">
+            @for (path of data.paths; track path.id) {
+              <a class="history-item" [routerLink]="['/learning', path.id]">
+                <div style="min-width: 0">
+                  <div class="small strong" style="overflow: hidden; text-overflow: ellipsis">{{ path.title }}</div>
+                  <div class="tiny muted">{{ path.skillName }} · {{ pathStatusLabels[path.status] }}</div>
+                  <div class="progress mt-1" style="max-width: 240px" [class.mint]="path.progressPercent === 100">
+                    <span [style.width.%]="path.progressPercent"></span>
+                  </div>
+                </div>
+                <span class="small strong" style="color: var(--violet-deep)">{{ path.progressPercent }}%</span>
+              </a>
+            }
+          </div>
+        } @else {
+          <p class="small muted mt-2">Aucun parcours pour le moment.</p>
+        }
+      </div>
+
+      <!-- Skills evolution -->
+      <div class="card">
+        <div class="card-title">
+          Évolution des compétences
+          <span class="tiny muted">déclarée ≠ vérifiée</span>
+        </div>
+        @if (data.skillProgress.length > 0) {
+          <div class="col mt-2" style="gap: 8px">
+            @for (skill of data.skillProgress; track skill.userSkillId) {
+              <div class="list-item" style="padding: 10px 14px">
+                <div>
+                  <div class="small strong">{{ skill.skillName }}</div>
+                  <div class="tiny muted">Niveau : {{ levelLabels[skill.level] }}</div>
+                </div>
+                <div class="row" style="gap: 8px">
+                  <span class="skill-status-dot" [class]="skill.status === 'DEMONSTRATED' ? 'mint' : skill.status === 'EVALUATED' ? 'violet' : 'slate'"
+                        aria-hidden="true"></span>
+                  <span class="badge" [class]="statusClasses[skill.status]">{{ statusLabels[skill.status] }}</span>
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="small muted mt-2">Ajoutez des compétences depuis votre profil.</p>
+        }
+      </div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="card mt-3">
+      <div class="card-title">Timeline des réalisations</div>
+      @if (data.timeline.length > 0) {
+        <ol class="timeline mt-2">
+          @for (event of data.timeline; track event.date + event.label) {
+            <li>
+              <span class="timeline-dot" [class.analyse]="event.type === 'ANALYSIS'"
+                    [class.preuve]="event.type === 'EVIDENCE'" [class.parcours]="event.type === 'PATH'"
+                    aria-hidden="true"></span>
+              <div class="row between wrap" style="gap: 8px">
+                <div>
+                  <div class="small strong">{{ event.label }}</div>
+                  @if (event.detail) {
+                    <div class="tiny muted" style="max-width: 520px; overflow: hidden; text-overflow: ellipsis">{{ event.detail }}</div>
+                  }
+                </div>
+                <div class="row" style="gap: 8px">
+                  <span class="badge badge-slate">{{ eventTypeLabels[event.type] }}</span>
+                  <span class="tiny muted nowrap">{{ shortDate(event.date) }}</span>
+                </div>
+              </div>
+            </li>
+          }
+        </ol>
+      } @else {
+        <sm-empty-state title="Pas encore d'activité" description="Vos analyses, parcours et preuves alimenteront cette timeline."
+                        icon="clock" actionLabel="Lancer une analyse" actionUrl="/jobs/new" />
+      }
+    </div>
+  </div>
+}

@@ -1,0 +1,78 @@
+<div class="auth-wrap">
+  <aside class="auth-side">
+    <a class="row" routerLink="/" style="gap: 10px">
+      <svg width="28" height="28" viewBox="0 0 32 32" aria-hidden="true">
+        <defs>
+          <linearGradient id="login-logo" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#7C5CFC" />
+            <stop offset="1" stop-color="#13B88A" />
+          </linearGradient>
+        </defs>
+        <circle cx="16" cy="16" r="13" stroke="url(#login-logo)" stroke-width="2.4" fill="none" />
+        <path d="M16 3a13 13 0 0 1 0 26z" fill="url(#login-logo)" opacity="0.85" />
+        <circle cx="16" cy="16" r="4.5" fill="#11152B" />
+      </svg>
+      <span style="color: #fff; font-family: var(--font-display); font-weight: 800">SkillMirror</span>
+    </a>
+    <div>
+      <h2>Reprenez là où vous vous êtes arrêté.</h2>
+      <p class="mt-2 small" style="color: #B9BCD4">
+        Vos analyses, vos parcours et vos preuves vous attendent. Votre progression est enregistrée
+        et reste explicable.
+      </p>
+      <div class="col mt-4" style="gap: 10px">
+        <div class="row" style="gap: 10px"><sm-icon name="check" [size]="16" /> Score de compatibilité explicable</div>
+        <div class="row" style="gap: 10px"><sm-icon name="check" [size]="16" /> Projets pratiques adaptés à votre rythme</div>
+        <div class="row" style="gap: 10px"><sm-icon name="check" [size]="16" /> Preuves vérifiables de vos compétences</div>
+      </div>
+    </div>
+    <p class="tiny" style="color: #8B8FAE">See your skills. Unlock your potential.</p>
+  </aside>
+
+  <div class="auth-form-wrap">
+    <div class="auth-card fade-in">
+      <h1>Connexion</h1>
+      <p class="muted mt-1">Ravi de vous revoir. Identifiez-vous pour continuer.</p>
+
+      <form class="col mt-4" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div class="field">
+          <label for="email">Adresse e-mail</label>
+          <input id="email" type="email" class="input" [class.error]="!!fieldError('email')"
+                 formControlName="email" autocomplete="email" placeholder="vous@exemple.com"
+                 [attr.aria-invalid]="!!fieldError('email')" />
+          @if (fieldError('email')) {
+            <span class="error-text">{{ fieldError('email') }}</span>
+          }
+        </div>
+
+        <div class="field">
+          <label for="password">Mot de passe</label>
+          <input id="password" type="password" class="input" [class.error]="!!fieldError('password')"
+                 formControlName="password" autocomplete="current-password" placeholder="••••••••"
+                 [attr.aria-invalid]="!!fieldError('password')" />
+          @if (fieldError('password')) {
+            <span class="error-text">{{ fieldError('password') }}</span>
+          }
+        </div>
+
+        @if (serverError()) {
+          <div class="form-alert" role="alert">
+            <sm-icon name="alert" [size]="16" /> {{ serverError() }}
+          </div>
+        }
+
+        <button class="btn btn-primary full mt-2" type="submit" [disabled]="pending()">
+          @if (pending()) {
+            <span class="spinner" style="border-top-color: #fff; border-color: rgba(255,255,255,.4); border-top-color: #fff"></span>
+          }
+          Se connecter
+        </button>
+      </form>
+
+      <p class="small muted mt-3 center">
+        Pas encore de compte ?
+        <a routerLink="/auth/register">Créer un compte</a>
+      </p>
+    </div>
+  </div>
+</div>

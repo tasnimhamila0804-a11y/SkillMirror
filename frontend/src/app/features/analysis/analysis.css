@@ -1,0 +1,126 @@
+.analysis-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 18px;
+  align-items: start;
+}
+
+.hero-card {
+  background:
+    radial-gradient(600px 200px at 100% 0%, rgba(124, 92, 252, 0.08), transparent 60%),
+    #fff;
+}
+
+.counts-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.summary-panel {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: var(--lavender);
+  color: #3F3670;
+  border-radius: var(--r-md);
+  padding: 13px 16px;
+}
+.summary-panel sm-icon {
+  color: var(--violet-deep);
+  flex: none;
+  margin-top: 1px;
+}
+
+.skill-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skill-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 11px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: #fff;
+}
+
+.mastery {
+  font-family: var(--font-display);
+  font-weight: 800;
+  color: var(--slate);
+  min-width: 52px;
+  text-align: right;
+}
+.mastery.good {
+  color: var(--mint);
+}
+
+.explanation {
+  font-family: var(--font-body);
+  white-space: pre-wrap;
+  font-size: 0.86rem;
+  color: var(--text-soft);
+  background: var(--cloud);
+  border-radius: var(--r-md);
+  padding: 16px;
+  margin: 0;
+  line-height: 1.65;
+}
+
+.cta-card {
+  background: linear-gradient(120deg, var(--midnight), var(--indigo) 65%, #322C77);
+  border-radius: var(--r-lg);
+  padding: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.history-card {
+  position: sticky;
+  top: 84px;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all var(--t-fast);
+}
+.history-item:hover {
+  border-color: var(--violet);
+}
+.history-item.current {
+  border-color: var(--violet);
+  background: var(--lavender);
+}
+
+.history-score {
+  font-family: var(--font-display);
+  font-weight: 800;
+  color: var(--danger);
+}
+.history-score.mint { color: var(--mint); }
+.history-score.violet { color: var(--violet-deep); }
+
+@media (max-width: 1080px) {
+  .analysis-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .history-card {
+    position: static;
+  }
+}

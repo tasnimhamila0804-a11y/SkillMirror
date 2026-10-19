@@ -1,0 +1,10 @@
+.account-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background: var(--cloud);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 10px 16px;
+  min-width: 160px;
+}

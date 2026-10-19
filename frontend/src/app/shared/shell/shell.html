@@ -1,0 +1,81 @@
+<div class="shell">
+  <div class="sidebar-backdrop" [class.show]="sidebarOpen()" (click)="closeSidebar()"></div>
+
+  <aside class="sidebar" [class.open]="sidebarOpen()" aria-label="Navigation principale">
+    <div class="brand">
+      <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true">
+        <defs>
+          <linearGradient id="shell-logo" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#7C5CFC" />
+            <stop offset="1" stop-color="#13B88A" />
+          </linearGradient>
+        </defs>
+        <circle cx="16" cy="16" r="13" stroke="url(#shell-logo)" stroke-width="2.4" fill="none" />
+        <path d="M16 3a13 13 0 0 1 0 26z" fill="url(#shell-logo)" opacity="0.85" />
+        <circle cx="16" cy="16" r="4.5" fill="#11152B" />
+      </svg>
+      <div>
+        <div class="brand-name">Skill<em>Mirror</em></div>
+        <div class="brand-tag">Career Intelligence</div>
+      </div>
+    </div>
+
+    <nav class="nav-section">Espace personnel</nav>
+    @for (link of mainNav; track link.path) {
+      <a class="nav-link" [routerLink]="link.path" routerLinkActive="active"
+         [routerLinkActiveOptions]="{ exact: link.path === '/dashboard' }">
+        <sm-icon [name]="link.icon" />
+        <span>{{ link.label }}</span>
+      </a>
+    }
+
+    @if (auth.isAdmin()) {
+      <nav class="nav-section">Administration</nav>
+      <a class="nav-link" routerLink="/admin" routerLinkActive="active">
+        <sm-icon name="admin" />
+        <span>Console admin</span>
+      </a>
+    }
+
+    <div class="sidebar-footer">
+      @for (link of accountNav; track link.path) {
+        <a class="nav-link" [routerLink]="link.path" routerLinkActive="active">
+          <sm-icon [name]="link.icon" />
+          <span>{{ link.label }}</span>
+        </a>
+      }
+      <button class="nav-link logout" (click)="auth.logout()">
+        <sm-icon name="logout" />
+        <span>Déconnexion</span>
+      </button>
+      <div class="user-card">
+        <div class="user-avatar" aria-hidden="true">{{ (auth.user()?.name || '?').charAt(0) }}</div>
+        <div class="user-meta">
+          <div class="user-name">{{ auth.user()?.name }}</div>
+          <div class="user-mail tiny">{{ auth.user()?.email }}</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="shell-main">
+    <header class="topbar">
+      <div class="row">
+        <button class="hamburger" (click)="toggleSidebar()" aria-label="Ouvrir la navigation">
+          <sm-icon name="menu" />
+        </button>
+        <h2 class="topbar-title">{{ pageTitle() }}</h2>
+      </div>
+      <div class="row">
+        <a class="btn btn-primary btn-sm" routerLink="/jobs/new">
+          <sm-icon name="spark" [size]="16" />
+          <span class="hide-mobile">Nouvelle analyse</span>
+        </a>
+      </div>
+    </header>
+
+    <main class="page-wrap">
+      <router-outlet />
+    </main>
+  </div>
+</div>

@@ -1,0 +1,159 @@
+<div class="fade-in">
+  <div class="page-head row between wrap">
+    <div>
+      <h1>{{ isEditing ? 'Modifier l’offre' : 'Nouvelle offre d’emploi' }}</h1>
+      <p>Collez l'offre complète : SkillMirror en extrait les compétences exigées.</p>
+    </div>
+    <a class="btn btn-ghost" routerLink="/jobs">← Retour aux offres</a>
+  </div>
+
+  <div class="workflow-steps mb-3">
+    <div class="workflow-step" [class.active]="true">
+      <span class="dot">1</span> Coller l'offre
+    </div>
+    <div class="workflow-step" [class.active]="skills().length > 0">
+      <span class="dot">2</span> Vérifier les compétences
+    </div>
+    <div class="workflow-step" [class.active]="extractionStatus === 'CONFIRMED'">
+      <span class="dot">3</span> Lancer l'analyse
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-panel"><span class="spinner lg"></span>Chargement de l'offre…</div>
+  } @else {
+    <div class="card">
+      <form class="col" [formGroup]="form" (ngSubmit)="$event.preventDefault()">
+        <div class="grid grid-2">
+          <div class="field">
+            <label for="title">Intitulé du poste *</label>
+            <input id="title" class="input" formControlName="title" placeholder="Développeur Full Stack Junior" />
+            @if (form.controls.title.touched && form.controls.title.invalid) {
+              <span class="error-text">L'intitulé est requis (190 caractères max).</span>
+            }
+          </div>
+          <div class="field">
+            <label for="company">Entreprise</label>
+            <input id="company" class="input" formControlName="company" placeholder="Nom de l'entreprise" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="description">Texte de l'offre *</label>
+          <textarea id="description" class="textarea tall" formControlName="description"
+                    placeholder="Collez ici l'intégralité de l'offre : missions, profil recherché, compétences, formations…"></textarea>
+          <span class="hint">
+            {{ form.controls.description.value?.length || 0 }} caractères — l'extraction fonctionne mieux
+            avec le texte complet (missions + profil).
+          </span>
+        </div>
+      </form>
+
+      @if (formError()) {
+        <div class="form-alert" role="alert">
+          <sm-icon name="alert" [size]="16" /> {{ formError() }}
+        </div>
+      }
+
+      <div class="row wrap mt-3">
+        <button class="btn btn-secondary" type="button" (click)="save()" [disabled]="saving() || extracting()">
+          {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
+        </button>
+        <button class="btn btn-primary" type="button" (click)="extract()" [disabled]="extracting()">
+          @if (extracting()) { <span class="spinner" style="border-color: rgba(255,255,255,.4); border-top-color: #fff"></span> }
+          <sm-icon name="spark" [size]="16" />
+          {{ extractionStatus === 'DRAFT' ? 'Extraire les compétences' : 'Relancer l’extraction' }}
+        </button>
+      </div>
+    </div>
+
+    @if (simulated()) {
+      <div class="simulated-note mt-3">
+        <sm-icon name="info" [size]="16" />
+        Extraction simulée : aucune clé API d'IA n'est configurée. Vérifiez attentivement les
+        compétences proposées — vous pouvez tout corriger avant l'analyse.
+      </div>
+    }
+
+    @if (skills().length > 0) {
+      <div class="card mt-3 fade-in">
+        <div class="card-title">
+          Compétences exigées ({{ skills().length }})
+          <button class="btn btn-secondary btn-sm" type="button" (click)="addSkillRow()">
+            <sm-icon name="plus" [size]="14" /> Ajouter
+          </button>
+        </div>
+        <p class="tiny muted mt-1">
+          Corrigez, ajoutez ou supprimez : cette liste est la base exacte du calcul du score.
+        </p>
+
+        <div class="table-wrap mt-2">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">Compétence</th>
+                <th scope="col">Exigence</th>
+                <th scope="col">Niveau attendu</th>
+                <th scope="col">Poids</th>
+                <th scope="col"><span class="sr-only">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (skill of skills(); track $index; let i = $index) {
+                <tr>
+                  <td>
+                    <input class="input" style="padding: 7px 10px" [value]="skill.name"
+                           (input)="updateSkill(i, { name: $any($event.target).value })"
+                           [attr.aria-label]="'Nom de la compétence ' + (i + 1)" />
+                  </td>
+                  <td>
+                    <div class="pill-tabs" role="group" aria-label="Exigence">
+                      <button type="button" [class.active]="skill.requirement === 'REQUIRED'"
+                              (click)="updateSkill(i, { requirement: 'REQUIRED' })">Requis</button>
+                      <button type="button" [class.active]="skill.requirement === 'DESIRED'"
+                              (click)="updateSkill(i, { requirement: 'DESIRED' })">Souhaité</button>
+                    </div>
+                  </td>
+                  <td>
+                    <select class="select" style="padding: 7px 10px; width: auto"
+                            [value]="skill.requiredLevel ?? ''"
+                            (change)="updateSkill(i, { requiredLevel: $any($event.target).value || null })"
+                            [attr.aria-label]="'Niveau attendu pour ' + skill.name">
+                      @for (level of levels; track level) {
+                        <option [value]="level">{{ levelLabels[level] }}</option>
+                      }
+                    </select>
+                  </td>
+                  <td>
+                    <span class="badge" [class]="skill.weight === 3 ? 'badge-danger' : skill.weight === 2 ? 'badge-amber' : 'badge-slate'">
+                      {{ skill.weight === 3 ? 'Critique' : skill.weight === 2 ? 'Important' : 'Secondaire' }}
+                    </span>
+                  </td>
+                  <td class="right">
+                    <button class="btn btn-ghost btn-icon" type="button" (click)="removeSkillRow(i)"
+                            [attr.aria-label]="'Supprimer ' + skill.name">
+                      <sm-icon name="trash" [size]="16" />
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="row wrap mt-3">
+          <button class="btn btn-secondary" type="button" (click)="confirmSkills()"
+                  [disabled]="saving() || extractionStatus === 'CONFIRMED'">
+            <sm-icon name="check" [size]="16" /> Valider cette liste
+          </button>
+          <button class="btn btn-mint" type="button" (click)="analyze()" [disabled]="analyzing() || extractionStatus !== 'CONFIRMED'">
+            @if (analyzing()) { <span class="spinner mint"></span> }
+            <sm-icon name="analysis" [size]="16" /> Lancer l'analyse de compatibilité
+          </button>
+          @if (extractionStatus !== 'CONFIRMED') {
+            <span class="tiny muted">Validez d'abord la liste pour activer l'analyse.</span>
+          }
+        </div>
+      </div>
+    }
+  }
+</div>

@@ -1,0 +1,293 @@
+<div class="fade-in">
+  <div class="page-head">
+    <h1>Administration</h1>
+    <p>
+      Gestion des comptes, du référentiel de compétences, de l'usage de l'IA et de la supervision
+      technique — aucun document privé n'y est accessible.
+    </p>
+  </div>
+
+  <div class="pill-tabs mb-3" role="tablist" aria-label="Sections d'administration">
+    @for (item of tabs; track item.id) {
+      <button type="button" role="tab" [class.active]="tab() === item.id"
+              [attr.aria-selected]="tab() === item.id" (click)="selectTab(item.id)">
+        {{ item.label }}
+      </button>
+    }
+  </div>
+
+  @if (loading() && !overview()) {
+    <div class="loading-panel"><span class="spinner lg"></span>Chargement…</div>
+  }
+
+  <!-- Overview -->
+  @if (tab() === 'overview' && overview(); as data) {
+    <div class="grid grid-4">
+      <div class="stat-card">
+        <span class="stat-label">Utilisateurs</span>
+        <span class="stat-value">{{ data.users }}</span>
+        <span class="stat-sub">{{ data.enabledUsers }} actif(s) · {{ data.admins }} admin(s)</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Analyses</span>
+        <span class="stat-value violet">{{ data.analyses }}</span>
+        <span class="stat-sub">{{ data.jobOffers }} offre(s) enregistrée(s)</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Parcours validés</span>
+        <span class="stat-value mint">{{ data.validatedPaths }}</span>
+        <span class="stat-sub">{{ data.learningPaths }} parcours · {{ data.evidences }} preuve(s)</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Mode IA</span>
+        <span class="stat-value" [class.mint]="data.aiLiveMode" [class.violet]="!data.aiLiveMode"
+              style="font-size: 1.2rem; padding-top: 10px">
+          {{ data.aiLiveMode ? 'Live (API)' : 'Démonstration' }}
+        </span>
+        <span class="stat-sub">{{ data.aiCalls }} appel(s) IA · {{ data.errors }} erreur(s)</span>
+      </div>
+    </div>
+    <div class="card mt-3">
+      <div class="card-title">Référentiel</div>
+      <p class="small muted mt-1">{{ data.skillCount }} compétences dans le référentiel.</p>
+    </div>
+  }
+
+  <!-- Users -->
+  @if (tab() === 'users') {
+    <div class="card">
+      <div class="card-title">
+        Comptes utilisateurs
+        <div class="row" style="gap: 8px">
+          <input class="input" style="padding: 7px 12px; width: 220px" placeholder="Rechercher…"
+                 [value]="userQuery()" (input)="userQuery.set($any($event.target).value)"
+                 (keyup.enter)="loadUsers()" aria-label="Rechercher un utilisateur" />
+          <button class="btn btn-secondary btn-sm" type="button" (click)="loadUsers()">
+            <sm-icon name="search" [size]="15" />
+          </button>
+        </div>
+      </div>
+      <div class="table-wrap mt-2">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">Utilisateur</th>
+              <th scope="col">Rôle</th>
+              <th scope="col">Profil</th>
+              <th scope="col">Skills</th>
+              <th scope="col">Analyses</th>
+              <th scope="col">Inscription</th>
+              <th scope="col">Statut</th>
+              <th scope="col"><span class="sr-only">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (user of users(); track user.id) {
+              <tr>
+                <td>
+                  <div class="strong small">{{ user.name }}</div>
+                  <div class="tiny muted">{{ user.email }}</div>
+                </td>
+                <td><span class="badge" [class]="user.role === 'ADMIN' ? 'badge-violet' : 'badge-slate'">{{ user.role }}</span></td>
+                <td>
+                  <span class="badge" [class]="user.profileCompleted ? 'badge-mint' : 'badge-amber'">
+                    {{ user.profileCompleted ? 'Complété' : 'En cours' }}
+                  </span>
+                </td>
+                <td class="small">{{ user.skillCount }}</td>
+                <td class="small">{{ user.analysisCount }}</td>
+                <td class="tiny muted nowrap">{{ shortDate(user.createdAt) }}</td>
+                <td>
+                  <span class="badge" [class]="user.enabled ? 'badge-mint' : 'badge-danger'">
+                    {{ user.enabled ? 'Actif' : 'Désactivé' }}
+                  </span>
+                </td>
+                <td class="right nowrap">
+                  <button class="btn btn-ghost btn-sm" type="button" (click)="promote(user)">
+                    {{ user.role === 'ADMIN' ? 'Retirer admin' : 'Promouvoir' }}
+                  </button>
+                  <button class="btn btn-sm" [class]="user.enabled ? 'btn-danger' : 'btn-mint'" type="button"
+                          (click)="toggleUser(user)">
+                    {{ user.enabled ? 'Désactiver' : 'Activer' }}
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  <!-- Skills -->
+  @if (tab() === 'skills') {
+    <div class="card">
+      <div class="card-title">
+        Référentiel des compétences ({{ skills().length }})
+      </div>
+      <div class="row wrap mt-2">
+        <input class="input" style="width: 260px" placeholder="Nouvelle compétence…"
+               [value]="newSkill().name"
+               (input)="newSkill.set({ ...newSkill(), name: $any($event.target).value })"
+               aria-label="Nom de la nouvelle compétence" />
+        <select class="select" style="width: auto"
+                [value]="newSkill().category"
+                (change)="newSkill.set({ ...newSkill(), category: $any($event.target).value })"
+                aria-label="Catégorie">
+          <option value="LANGUAGES">Langages</option>
+          <option value="WEB">Web</option>
+          <option value="DATABASES">Bases de données</option>
+          <option value="DATA">Données</option>
+          <option value="AI">IA</option>
+          <option value="TOOLS">Outils</option>
+          <option value="SOFT_SKILLS">Soft skills</option>
+          <option value="OTHER">Autre</option>
+        </select>
+        <button class="btn btn-primary btn-sm" type="button" (click)="createSkill()">
+          <sm-icon name="plus" [size]="15" /> Ajouter
+        </button>
+      </div>
+
+      <div class="table-wrap mt-3">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">Nom</th>
+              <th scope="col">Catégorie</th>
+              <th scope="col">Origine</th>
+              <th scope="col"><span class="sr-only">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (skill of skills(); track skill.id) {
+              <tr>
+                <td class="strong small">{{ skill.name }}</td>
+                <td class="small muted">{{ skill.category }}</td>
+                <td><span class="badge" [class]="skill.custom ? 'badge-amber' : 'badge-slate'">{{ skill.custom ? 'Personnalisée' : 'Référentiel' }}</span></td>
+                <td class="right">
+                  <button class="btn btn-ghost btn-icon" type="button" (click)="deleteSkill(skill)"
+                          aria-label="Supprimer la compétence">
+                    <sm-icon name="trash" [size]="15" />
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <p class="tiny muted mt-2">
+        Une compétence utilisée par des profils ne peut pas être supprimée (intégrité des données).
+      </p>
+    </div>
+  }
+
+  <!-- AI usage -->
+  @if (tab() === 'ai') {
+    @if (usage(); as report) {
+      <div class="grid grid-4">
+        <div class="stat-card">
+          <span class="stat-label">Appels IA</span>
+          <span class="stat-value">{{ report.calls }}</span>
+          <span class="stat-sub">{{ report.liveCalls }} live · {{ report.simulatedCalls }} simulés</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Erreurs IA</span>
+          <span class="stat-value" [class]="report.errors > 0 ? '' : 'mint'">{{ report.errors }}</span>
+          <span class="stat-sub">repli automatique vers le mode démo</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Tokens prompt</span>
+          <span class="stat-value violet">{{ report.promptTokens }}</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Tokens réponse</span>
+          <span class="stat-value violet">{{ report.completionTokens }}</span>
+        </div>
+      </div>
+
+      <div class="card mt-3">
+        <div class="card-title">Derniers appels</div>
+        <div class="table-wrap mt-2">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">Date</th>
+                <th scope="col">Usage</th>
+                <th scope="col">Mode</th>
+                <th scope="col">Tokens</th>
+                <th scope="col">Latence</th>
+                <th scope="col">Statut</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of report.recent; track item.id) {
+                <tr>
+                  <td class="tiny muted nowrap">{{ shortDate(item.createdAt) }}</td>
+                  <td class="small">{{ item.purpose }}</td>
+                  <td><span class="badge" [class]="item.mode === 'LIVE' ? 'badge-violet' : 'badge-amber'">{{ item.mode === 'LIVE' ? 'Live' : 'Simulé' }}</span></td>
+                  <td class="small">{{ item.promptTokens + item.completionTokens }}</td>
+                  <td class="small">{{ item.latencyMs }} ms</td>
+                  <td>
+                    <span class="badge" [class]="item.status === 'SUCCESS' ? 'badge-mint' : 'badge-danger'">
+                      {{ item.status === 'SUCCESS' ? 'OK' : 'Erreur' }}
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+  }
+
+  <!-- Errors -->
+  @if (tab() === 'errors') {
+    <div class="card">
+      <div class="card-title">Erreurs techniques récentes</div>
+      @if (errors().length > 0) {
+        <div class="col mt-2" style="gap: 8px">
+          @for (error of errors(); track error.id) {
+            <div class="error-row">
+              <span class="badge" [class]="error.level === 'ERROR' ? 'badge-danger' : 'badge-amber'">{{ error.level }}</span>
+              <div style="flex: 1; min-width: 0">
+                <div class="small" style="overflow: hidden; text-overflow: ellipsis">{{ error.message }}</div>
+                <div class="tiny muted">{{ error.method }} {{ error.path }} · utilisateur #{{ error.userId ?? 'anonyme' }}</div>
+              </div>
+              <span class="tiny muted nowrap">{{ shortDate(error.createdAt) }}</span>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="small muted mt-2">Aucune erreur enregistrée — l'application tourne proprement.</p>
+      }
+    </div>
+  }
+
+  <!-- Settings -->
+  @if (tab() === 'settings') {
+    <div class="card">
+      <div class="card-title">Paramètres de la plateforme</div>
+      <div class="col mt-2" style="gap: 10px">
+        @for (setting of settings(); track setting.key) {
+          <div class="setting-row">
+            <div style="flex: 1">
+              <div class="small strong">{{ setting.key }}</div>
+              <div class="tiny muted">{{ setting.description }}</div>
+            </div>
+            <input class="input" style="width: 220px" [value]="setting.value" #settingInput
+                   [attr.aria-label]="'Valeur pour ' + setting.key"
+                   (keyup.enter)="saveSetting(setting, settingInput.value)" />
+            <button class="btn btn-secondary btn-sm" type="button"
+                    (click)="saveSetting(setting, settingInput.value)">
+              Enregistrer
+            </button>
+          </div>
+        }
+      </div>
+      <p class="tiny muted mt-2">
+        Les paramètres s'appliquent immédiatement (quotas IA, inscription, etc.).
+      </p>
+    </div>
+  }
+</div>

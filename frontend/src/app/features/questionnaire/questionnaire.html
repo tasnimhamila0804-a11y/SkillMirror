@@ -1,0 +1,402 @@
+<div class="fade-in">
+  <div class="page-head row between wrap">
+    <div>
+      <h1>Profilage initial</h1>
+      <p>Six étapes courtes pour que SkillMirror comprenne vraiment votre profil.</p>
+    </div>
+    <div class="row">
+      @if (saving()) { <span class="tiny muted">Enregistrement…</span> }
+      <button class="btn btn-ghost btn-sm" type="button" (click)="saveDraft()">
+        <sm-icon name="check" [size]="15" /> Enregistrer et sortir
+      </button>
+    </div>
+  </div>
+
+  <!-- Stepper -->
+  <nav class="stepper mb-3" aria-label="Étapes du questionnaire">
+    @for (title of stepTitles; track title; let i = $index) {
+      <button type="button" class="step" [class.current]="step() === i + 1"
+              [class.done]="step() > i + 1"
+              [disabled]="i + 1 > maxStep()" (click)="goTo(i + 1)"
+              [attr.aria-current]="step() === i + 1 ? 'step' : null">
+        <span class="dot">
+          @if (step() > i + 1) { <sm-icon name="check" [size]="12" /> } @else { {{ i + 1 }} }
+        </span>
+        <span class="step-name">{{ title }}</span>
+      </button>
+    }
+  </nav>
+
+  @if (loading()) {
+    <div class="loading-panel"><span class="spinner lg"></span>Chargement de vos réponses…</div>
+  } @else {
+    <div class="card step-card fade-in">
+
+      <!-- Step 1: situation -->
+      @if (step() === 1) {
+        <h2>Où en êtes-vous aujourd'hui ?</h2>
+        <p class="muted small mt-1">Ces informations contextualisent toutes vos analyses.</p>
+
+        <div class="option-grid mt-3" role="radiogroup" aria-label="Situation actuelle">
+          @for (option of situations; track option.value) {
+            <button type="button" class="option-card"
+                    [class.selected]="situationForm.controls.situation.value === option.value"
+                    (click)="situationForm.controls.situation.setValue(option.value)"
+                    role="radio"
+                    [attr.aria-checked]="situationForm.controls.situation.value === option.value">
+              <span class="option-label">{{ option.label }}</span>
+              @if (option.hint) { <span class="tiny muted">{{ option.hint }}</span> }
+            </button>
+          }
+        </div>
+
+        <form class="grid grid-2 mt-3" [formGroup]="situationForm">
+          <div class="field">
+            <label for="domain">Domaine d'études ou d'activité *</label>
+            <input id="domain" class="input" formControlName="domain"
+                   [class.error]="situationForm.controls.domain.touched && situationForm.controls.domain.invalid"
+                   placeholder="Informatique, Marketing, Génie civil…" />
+          </div>
+          <div class="field">
+            <label for="educationLevel">Niveau d'études / niveau professionnel</label>
+            <input id="educationLevel" class="input" formControlName="educationLevel"
+                   placeholder="Licence 3, Master, Bac+5, Autodidacte…" />
+          </div>
+          <div class="field" style="grid-column: 1 / -1">
+            <label for="experienceSummary">Expériences et stages éventuels</label>
+            <textarea id="experienceSummary" class="textarea" formControlName="experienceSummary"
+                      placeholder="Facultatif : stages, jobs, projets marquants…"></textarea>
+          </div>
+        </form>
+      }
+
+      <!-- Step 2: skills -->
+      @if (step() === 2) {
+        <h2>Quelles compétences possédez-vous ?</h2>
+        <p class="muted small mt-1">Cliquez pour ajouter ou retirer. Vous pourrez ensuite ajuster depuis votre profil.</p>
+
+        <div class="row wrap mt-3">
+          <div class="field" style="flex: 1; min-width: 220px">
+            <label for="skillSearch" class="sr-only">Rechercher une compétence</label>
+            <input id="skillSearch" class="input" placeholder="Rechercher : React, SQL, Docker…"
+                   [value]="search()" (input)="search.set($any($event.target).value)" />
+          </div>
+          <div class="field" style="min-width: 200px">
+            <label for="customSkill" class="sr-only">Compétence personnalisée</label>
+            <div class="row" style="gap: 8px">
+              <input id="customSkill" class="input" placeholder="Compétence absente du référentiel…"
+                     [value]="customSkill()" (input)="customSkill.set($any($event.target).value)"
+                     (keyup.enter)="addCustomSkill()" />
+              <button class="btn btn-secondary btn-icon" type="button" (click)="addCustomSkill()"
+                      aria-label="Ajouter la compétence personnalisée">
+                <sm-icon name="plus" [size]="17" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        @if (!search()) {
+          <div class="row wrap mt-2" role="tablist" aria-label="Catégories">
+            @for (category of skillCategories; track category.value) {
+              <button type="button" class="chip chip-select" role="tab"
+                      [class.on]="activeCategory() === category.value"
+                      [attr.aria-selected]="activeCategory() === category.value"
+                      (click)="activeCategory.set(category.value)">
+                {{ category.label }}
+              </button>
+            }
+          </div>
+        }
+
+        <div class="skill-cloud mt-3">
+          @for (skill of filteredSkills(); track skill.id) {
+            <button type="button" class="chip chip-select"
+                    [class.on]="selectedNames.has(skill.name.toLowerCase())"
+                    (click)="toggleSkill(skill)"
+                    [attr.aria-pressed]="selectedNames.has(skill.name.toLowerCase())">
+              {{ skill.name }}
+              @if (selectedNames.has(skill.name.toLowerCase())) { <sm-icon name="check" [size]="13" /> }
+            </button>
+          } @empty {
+            <p class="muted small">Aucune compétence ne correspond à cette recherche.</p>
+          }
+        </div>
+
+        @if (skills().length > 0) {
+          <div class="mt-3">
+            <h4>{{ skills().length }} compétence(s) sélectionnée(s)</h4>
+            <div class="row wrap mt-1">
+              @for (skill of skills(); track skill.name) {
+                <span class="chip on">
+                  {{ skill.name }}
+                  <button type="button" (click)="removeSkill(skill.name)" [attr.aria-label]="'Retirer ' + skill.name">
+                    <sm-icon name="close" [size]="12" />
+                  </button>
+                </span>
+              }
+            </div>
+          </div>
+        }
+      }
+
+      <!-- Step 3: self-assessment -->
+      @if (step() === 3) {
+        <h2>Évaluez votre niveau</h2>
+        <p class="muted small mt-1">
+          Il s'agit d'une autoévaluation, pas d'une certification : elle sera pondérée et
+          pourra être confirmée par des preuves.
+        </p>
+
+        <div class="level-list mt-3">
+          @for (skill of skills(); track skill.name) {
+            <div class="level-row">
+              <span class="strong">{{ skill.name }}</span>
+              <div class="row wrap" role="radiogroup" [attr.aria-label]="'Niveau pour ' + skill.name">
+                @for (level of levels; track level.value) {
+                  <button type="button" class="chip chip-select"
+                          [class.on]="levelOf(skill.name) === level.value"
+                          [title]="level.hint"
+                          (click)="setLevel(skill.name, $any(level.value))"
+                          [attr.aria-pressed]="levelOf(skill.name) === level.value">
+                    {{ level.label }}
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="info-panel mt-3">
+          <sm-icon name="info" [size]="17" />
+          <div class="small">
+            <strong>Débutant</strong> : notions fondamentales ·
+            <strong>Intermédiaire</strong> : projets simples ·
+            <strong>Avancé</strong> : projets complexes en autonomie ·
+            <strong>Expert</strong> : problèmes complexes, expérience approfondie.
+          </div>
+        </div>
+      }
+
+      <!-- Step 4: experience & proofs -->
+      @if (step() === 4) {
+        <h2>Expériences et preuves</h2>
+        <p class="muted small mt-1">Tout est facultatif — renseignez ce qui existe, rien d'autre.</p>
+
+        <div class="grid grid-2 mt-3">
+          <div class="card pad-sm">
+            <div class="card-title">
+              Projets
+              <button class="btn btn-secondary btn-sm" type="button" (click)="addProject()">
+                <sm-icon name="plus" [size]="14" /> Ajouter
+              </button>
+            </div>
+            @for (project of payload.experience?.projects ?? []; track $index; let i = $index) {
+              <div class="array-item">
+                <input class="input" placeholder="Nom du projet *" [(ngModel)]="project.name"
+                       [ngModelOptions]="{ standalone: true }" />
+                <input class="input" placeholder="Dépôt Git ou lien" [(ngModel)]="project.repositoryUrl"
+                       [ngModelOptions]="{ standalone: true }" />
+                <input class="input" placeholder="Technologies" [(ngModel)]="project.technologies"
+                       [ngModelOptions]="{ standalone: true }" />
+                <button class="btn btn-ghost btn-icon" type="button" (click)="removeProject(i)"
+                        aria-label="Retirer ce projet"><sm-icon name="trash" [size]="16" /></button>
+              </div>
+            } @empty {
+              <p class="small muted mt-2">Aucun projet pour l'instant.</p>
+            }
+          </div>
+
+          <div class="card pad-sm">
+            <div class="card-title">
+              Expériences professionnelles
+              <button class="btn btn-secondary btn-sm" type="button" (click)="addExperience()">
+                <sm-icon name="plus" [size]="14" /> Ajouter
+              </button>
+            </div>
+            @for (experience of payload.experience?.experiences ?? []; track $index; let i = $index) {
+              <div class="array-item">
+                <input class="input" placeholder="Poste ou intitulé *" [(ngModel)]="experience.title"
+                       [ngModelOptions]="{ standalone: true }" />
+                <input class="input" placeholder="Organisation" [(ngModel)]="experience.organization"
+                       [ngModelOptions]="{ standalone: true }" />
+                <input class="input" placeholder="Période (ex. 2025-04 → 2025-07)" [(ngModel)]="experience.startDate"
+                       [ngModelOptions]="{ standalone: true }" />
+                <button class="btn btn-ghost btn-icon" type="button" (click)="removeExperience(i)"
+                        aria-label="Retirer cette expérience"><sm-icon name="trash" [size]="16" /></button>
+              </div>
+            } @empty {
+              <p class="small muted mt-2">Aucune expérience renseignée.</p>
+            }
+          </div>
+
+          <div class="card pad-sm">
+            <div class="card-title">
+              Certifications
+              <button class="btn btn-secondary btn-sm" type="button" (click)="addCertificate()">
+                <sm-icon name="plus" [size]="14" /> Ajouter
+              </button>
+            </div>
+            @for (certificate of payload.experience?.certificates ?? []; track $index; let i = $index) {
+              <div class="array-item">
+                <input class="input" placeholder="Nom de la certification *" [(ngModel)]="certificate.name"
+                       [ngModelOptions]="{ standalone: true }" />
+                <input class="input" placeholder="Organisme" [(ngModel)]="certificate.issuer"
+                       [ngModelOptions]="{ standalone: true }" />
+                <button class="btn btn-ghost btn-icon" type="button" (click)="removeCertificate(i)"
+                        aria-label="Retirer cette certification"><sm-icon name="trash" [size]="16" /></button>
+              </div>
+            } @empty {
+              <p class="small muted mt-2">Aucune certification.</p>
+            }
+          </div>
+
+          <div class="card pad-sm">
+            <div class="card-title">Liens</div>
+            <div class="field mt-2">
+              <label for="githubUrl">GitHub</label>
+              <input id="github" class="input" placeholder="https://github.com/vous"
+                     [(ngModel)]="payload.experience!.githubUrl" [ngModelOptions]="{ standalone: true }" />
+            </div>
+            <div class="field mt-2">
+              <label for="portfolioUrl">Portfolio / site personnel</label>
+              <input id="portfolioUrl" class="input" placeholder="https://…"
+                     [(ngModel)]="payload.experience!.portfolioUrl" [ngModelOptions]="{ standalone: true }" />
+            </div>
+            <p class="tiny muted mt-2">
+              L'importation automatique de CV n'est pas activée dans cette version.
+            </p>
+          </div>
+        </div>
+      }
+
+      <!-- Step 5: objective -->
+      @if (step() === 5) {
+        <h2>Quel métier visez-vous ?</h2>
+        <p class="muted small mt-1">Vos analyses seront comparées à ce type de poste.</p>
+
+        <form class="grid grid-2 mt-3" [formGroup]="objectiveForm">
+          <div class="field">
+            <label for="targetJob">Métier visé *</label>
+            <input id="targetJob" class="input" list="jobs-list" formControlName="targetJob"
+                   placeholder="Développeur Full Stack…" />
+            <datalist id="jobs-list">
+              @for (job of targetJobs; track job) { <option [value]="job"></option> }
+            </datalist>
+          </div>
+          <div class="field">
+            <label for="targetCompany">Entreprise ou offre ciblée (facultatif)</label>
+            <input id="targetCompany" class="input" formControlName="targetCompany"
+                   placeholder="Nom de l'entreprise…" />
+          </div>
+
+          <div class="field">
+            <span class="label">Objectif principal *</span>
+            <div class="row wrap" role="radiogroup" aria-label="Objectif principal">
+              @for (goal of careerGoals; track goal.value) {
+                <button type="button" class="chip chip-select"
+                        [class.on]="objectiveForm.controls.careerGoal.value === goal.value"
+                        (click)="objectiveForm.controls.careerGoal.setValue(goal.value)"
+                        [attr.aria-pressed]="objectiveForm.controls.careerGoal.value === goal.value">
+                  {{ goal.label }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="field">
+            <span class="label">Type de poste *</span>
+            <div class="row wrap" role="radiogroup" aria-label="Type de poste">
+              @for (type of positionTypes; track type.value) {
+                <button type="button" class="chip chip-select"
+                        [class.on]="objectiveForm.controls.positionType.value === type.value"
+                        (click)="objectiveForm.controls.positionType.setValue(type.value)"
+                        [attr.aria-pressed]="objectiveForm.controls.positionType.value === type.value">
+                  {{ type.label }}
+                </button>
+              }
+            </div>
+          </div>
+        </form>
+      }
+
+      <!-- Step 6: preferences -->
+      @if (step() === 6) {
+        <h2>Vos préférences d'apprentissage</h2>
+        <p class="muted small mt-1">Nous adapterons vos projets à votre rythme réel.</p>
+
+        <form class="col mt-3" [formGroup]="preferencesForm">
+          <div class="field">
+            <label for="hours">Heures disponibles par semaine : <strong>{{ preferencesForm.controls.hoursPerWeek.value }} h</strong></label>
+            <input id="hours" type="range" min="1" max="40" step="1" class="range"
+                   formControlName="hoursPerWeek" />
+            <div class="row between tiny muted"><span>1 h</span><span>40 h</span></div>
+          </div>
+
+          <div class="field">
+            <span class="label">Type d'apprentissage préféré</span>
+            <div class="row wrap" role="radiogroup" aria-label="Préférence d'apprentissage">
+              @for (pref of learningPreferences; track pref.value) {
+                <button type="button" class="chip chip-select"
+                        [class.on]="payload.preferences?.learningPreference === pref.value"
+                        (click)="payload.preferences!.learningPreference = pref.value"
+                        [attr.aria-pressed]="payload.preferences?.learningPreference === pref.value">
+                  {{ pref.label }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="field">
+            <span class="label">Niveau de difficulté souhaité</span>
+            <div class="row wrap" role="radiogroup" aria-label="Difficulté">
+              @for (difficulty of difficulties; track difficulty.value) {
+                <button type="button" class="chip chip-select"
+                        [class.on]="payload.preferences?.preferredDifficulty === difficulty.value"
+                        (click)="payload.preferences!.preferredDifficulty = difficulty.value"
+                        [attr.aria-pressed]="payload.preferences?.preferredDifficulty === difficulty.value">
+                  {{ difficulty.label }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="deadline">Échéance éventuelle</label>
+            <input id="deadline" class="input" formControlName="deadline" placeholder="Ex. 6 mois" />
+          </div>
+        </form>
+
+        <div class="info-panel mt-3">
+          <sm-icon name="spark" [size]="17" />
+          <div class="small">
+            À la validation, SkillMirror créera votre profil professionnel, enregistrera vos
+            compétences déclarées et vous orientera vers votre tableau de bord.
+          </div>
+        </div>
+      }
+
+      <!-- Alerts & actions -->
+      @if (stepError()) {
+        <div class="form-alert mt-3" role="alert">
+          <sm-icon name="alert" [size]="16" /> {{ stepError() }}
+        </div>
+      }
+
+      <div class="row between mt-4">
+        <button class="btn btn-secondary" type="button" (click)="goPrev()" [disabled]="step() === 1">
+          Précédent
+        </button>
+        @if (step() < 6) {
+          <button class="btn btn-primary" type="button" (click)="goNext()">
+            Continuer <sm-icon name="arrow-right" [size]="16" />
+          </button>
+        } @else {
+          <button class="btn btn-mint" type="button" (click)="complete()" [disabled]="completing()">
+            @if (completing()) { <span class="spinner mint"></span> }
+            Créer mon profil <sm-icon name="check" [size]="16" />
+          </button>
+        }
+      </div>
+    </div>
+  }
+</div>

@@ -1,0 +1,185 @@
+<div class="fade-in">
+  <div class="page-head">
+    <h1>Analyse des écarts</h1>
+    <p>Compatibilité entre votre profil et les exigences de l'offre — calculée par le Career Gap Engine.</p>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-panel">
+      <span class="spinner lg"></span>
+      Calcul de votre score et comparaison des compétences…
+    </div>
+  } @else if (!result()) {
+    <sm-empty-state
+      title="Aucune analyse pour l'instant"
+      description="Collez une offre d'emploi, validez les compétences extraites, puis lancez l'analyse pour obtenir votre score et vos écarts prioritaires."
+      icon="analysis"
+      actionLabel="Analyser une offre"
+      actionUrl="/jobs/new" />
+  } @else {
+    <div class="analysis-layout">
+      <div class="col" style="gap: 18px">
+        <!-- Score + job summary -->
+        <div class="card hero-card">
+          <div class="row wrap" style="gap: 28px; align-items: center">
+            <sm-score-ring [score]="result()!.analysis.score" [size]="190" />
+            <div style="flex: 1; min-width: 240px">
+              <div class="row wrap" style="gap: 8px">
+                <span class="badge badge-navy">Offre analysée</span>
+                @if (result()!.simulatedAi) {
+                  <span class="badge badge-amber">IA simulée</span>
+                }
+              </div>
+              <h2 class="mt-2">{{ result()!.analysis.jobTitle }}</h2>
+              <p class="muted small">
+                {{ result()!.analysis.company || 'Entreprise non renseignée' }}
+                <span class="dot-sep"></span> analysée le {{ shortDate(result()!.analysis.createdAt) }}
+              </p>
+              <div class="counts-row mt-3">
+                <span class="badge badge-mint">{{ result()!.counts.demonstrated }} démontrée(s)</span>
+                <span class="badge badge-violet">{{ result()!.counts.declared }} déclarée(s)</span>
+                <span class="badge badge-amber">{{ result()!.counts.partial }} partielle(s)</span>
+                <span class="badge badge-danger">{{ result()!.counts.missing }} manquante(s)</span>
+              </div>
+            </div>
+          </div>
+
+          @if (result()!.analysis.summary) {
+            <div class="summary-panel mt-3">
+              <sm-icon name="spark" [size]="17" />
+              <div class="small">{{ result()!.analysis.summary }}</div>
+            </div>
+          }
+        </div>
+
+        <!-- Strengths -->
+        <div class="card">
+          <div class="card-title">
+            <span class="row" style="gap: 8px"><sm-icon name="check" [size]="17" style="color: var(--mint)" /> Your strengths</span>
+          </div>
+          @if (strengths().length > 0) {
+            <div class="skill-grid mt-2">
+              @for (detail of strengths(); track detail.id) {
+                <div class="skill-row">
+                  <div style="flex: 1">
+                    <div class="row wrap" style="gap: 8px">
+                      <span class="strong small">{{ detail.skillName }}</span>
+                      <span class="badge" [class]="detail.matchCategory === 'DEMONSTRATED' ? 'badge-mint' : 'badge-violet'">
+                        {{ matchLabels[detail.matchCategory] }}
+                      </span>
+                      <span class="tiny muted">poids {{ detail.weight }}</span>
+                    </div>
+                    <div class="tiny muted mt-1">{{ detail.note }}</div>
+                  </div>
+                  <div class="mastery" [class.good]="Number(detail.masteryScore) >= 0.75">
+                    {{ Math.round(Number(detail.masteryScore) * 100) }}%
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="small muted mt-2">Aucune compétence de l'offre n'est actuellement couverte par votre profil.</p>
+          }
+        </div>
+
+        <!-- To improve -->
+        <div class="card">
+          <div class="card-title">
+            <span class="row" style="gap: 8px"><sm-icon name="progress" [size]="17" style="color: var(--amber)" /> Skills to improve</span>
+          </div>
+          @if (toImprove().length > 0) {
+            <div class="skill-grid mt-2">
+              @for (detail of toImprove(); track detail.id) {
+                <div class="skill-row">
+                  <div style="flex: 1">
+                    <div class="row wrap" style="gap: 8px">
+                      <span class="strong small">{{ detail.skillName }}</span>
+                      <span class="badge badge-amber">{{ matchLabels[detail.matchCategory] }}</span>
+                      <span class="tiny muted">niveau {{ detail.userLevel }} → {{ detail.requiredLevel }}</span>
+                    </div>
+                    <div class="tiny muted mt-1">{{ detail.note }}</div>
+                  </div>
+                  <div class="mastery">{{ Math.round(Number(detail.masteryScore) * 100) }}%</div>
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="small muted mt-2">Aucune compétence partiellement maîtrisée.</p>
+          }
+        </div>
+
+        <!-- Missing -->
+        <div class="card">
+          <div class="card-title">
+            <span class="row" style="gap: 8px"><sm-icon name="alert" [size]="17" style="color: var(--danger)" /> Missing skills</span>
+          </div>
+          @if (missing().length > 0) {
+            <div class="skill-grid mt-2">
+              @for (detail of missing(); track detail.id) {
+                <div class="skill-row">
+                  <div style="flex: 1">
+                    <div class="row wrap" style="gap: 8px">
+                      <span class="strong small">{{ detail.skillName }}</span>
+                      <span class="badge badge-danger">{{ matchLabels[detail.matchCategory] }}</span>
+                      <span class="badge" [class]="detail.priority <= 2 ? 'badge-danger' : 'badge-slate'">
+                        Priorité {{ detail.priority }}
+                      </span>
+                    </div>
+                    <div class="tiny muted mt-1">{{ detail.note }}</div>
+                  </div>
+                  <div class="mastery">{{ Math.round(Number(detail.masteryScore) * 100) }}%</div>
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="small muted mt-2">Aucune compétence manquante — excellent départ !</p>
+          }
+        </div>
+
+        <!-- Explanation -->
+        <div class="card">
+          <div class="card-title">
+            <span class="row" style="gap: 8px"><sm-icon name="info" [size]="17" /> Comment ce score est calculé</span>
+          </div>
+          <pre class="explanation mt-2">{{ result()!.explanation }}</pre>
+        </div>
+
+        <div class="cta-card">
+          <div>
+            <h3 style="color: #fff">Passez à l'action</h3>
+            <p class="small mt-1" style="color: #C9CBDC">
+              Générez jusqu'à trois projets pratiques ciblant vos écarts prioritaires, avec étapes,
+              tâches et preuve attendue.
+            </p>
+          </div>
+          <button class="btn btn-mint btn-lg" type="button" (click)="generatePaths()" [disabled]="generating()">
+            @if (generating()) { <span class="spinner mint"></span> }
+            Générer un parcours personnalisé
+          </button>
+        </div>
+      </div>
+
+      <!-- History sidebar -->
+      <aside class="card history-card">
+        <div class="card-title">Historique</div>
+        <div class="col mt-2" style="gap: 8px">
+          @for (entry of history(); track entry.id) {
+            <button class="history-item" type="button" [class.current]="entry.id === result()?.analysis?.id"
+                    (click)="select(entry.id)">
+              <div style="min-width: 0; text-align: left">
+                <div class="small strong" style="overflow: hidden; text-overflow: ellipsis">{{ entry.jobTitle }}</div>
+                <div class="tiny muted">{{ shortDate(entry.createdAt) }}</div>
+              </div>
+              <span class="history-score" [class.mint]="entry.score >= 70" [class.violet]="entry.score >= 45 && entry.score < 70">
+                {{ entry.score }}
+              </span>
+            </button>
+          }
+        </div>
+        <p class="tiny muted mt-2">
+          Chaque analyse est sauvegardée : votre progression se mesure d'une analyse à l'autre.
+        </p>
+      </aside>
+    </div>
+  }
+</div>

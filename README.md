@@ -1,5 +1,34 @@
 # SkillMirror
 SkillMirror is an AI-powered career guidance platform designed to help users understand their skills, identify skill gaps, and build a personalized path toward their professional goals.
+
+**Signature : See your skills. Unlock your potential.**
+
+## Démarrage rapide
+
+Le cahier des charges complet est documenté ci-dessous ; l'installation et les commandes de
+lancement sont détaillées dans **[docs/INSTALLATION.md](docs/INSTALLATION.md)**.
+
+```bash
+# 1. Base de données (Docker) — ou utilisez un MySQL existant / le profil dev (H2)
+docker compose up -d
+
+# 2. Backend (Spring Boot, port 8080)
+cd backend && ./mvnw spring-boot:run
+# variante démonstration avec données de présentation :
+#   ./mvnw spring-boot:run -Dspring-boot.run.profiles=demo
+#   comptes : demo@skillmirror.local / Demo1234!  et  admin@skillmirror.local / Admin1234!
+
+# 3. Frontend (Angular, port 4200, proxy /api → backend)
+cd frontend && npm ci && npm start
+```
+
+- **Sans clé API IA**, la plateforme fonctionne intégralement en **mode démonstration** :
+  les résultats générés par l'IA sont déterministes et clairement signalés comme simulés.
+- Toutes les variables d'environnement sont documentées dans `backend/.env.example`.
+- Tests : `cd backend && ./mvnw test` · `cd frontend && npm test`.
+
+---
+
 # CAHIER DES CHARGES FONCTIONNEL ET TECHNIQUE
 ## Projet SkillMirror — Plateforme intelligente d’analyse et de développement des compétences professionnelles
 

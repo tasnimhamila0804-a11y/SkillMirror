@@ -1,0 +1,58 @@
+<div class="fade-in">
+  <div class="page-head row between wrap">
+    <div>
+      <h1>Offres d'emploi</h1>
+      <p>Collez une offre, vérifiez les compétences extraites, puis lancez l'analyse.</p>
+    </div>
+    <a class="btn btn-primary" routerLink="/jobs/new">
+      <sm-icon name="plus" [size]="16" /> Nouvelle offre
+    </a>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-panel"><span class="spinner lg"></span>Chargement…</div>
+  } @else if (jobs().length === 0) {
+    <sm-empty-state
+      title="Aucune offre enregistrée"
+      description="Collez le texte d'une offre d'emploi qui vous intéresse : l'IA extraira les compétences exigées, et vous vérifierez le résultat avant toute analyse."
+      icon="jobs"
+      actionLabel="Ajouter ma première offre"
+      actionUrl="/jobs/new" />
+  } @else {
+    <div class="col" style="gap: 12px">
+      @for (job of jobs(); track job.id) {
+        <div class="list-item job-item">
+          <div style="min-width: 0">
+            <div class="row wrap" style="gap: 8px">
+              <span class="strong">{{ job.title }}</span>
+              <span class="badge" [class]="job.extractionStatus === 'CONFIRMED' ? 'badge-mint' : job.extractionStatus === 'EXTRACTED' ? 'badge-violet' : 'badge-slate'">
+                {{ statusLabels[job.extractionStatus] || job.extractionStatus }}
+              </span>
+            </div>
+            <div class="tiny muted mt-1">
+              {{ job.company || 'Entreprise non renseignée' }}
+              <span class="dot-sep"></span>{{ shortDate(job.createdAt) }}
+              <span class="dot-sep"></span>{{ job.skillCount }} compétence(s)
+              @if (job.experienceLevel) {
+                <span class="dot-sep"></span>{{ job.experienceLevel }}
+              }
+            </div>
+          </div>
+          <div class="row" style="gap: 8px">
+            <a class="btn btn-secondary btn-sm" [routerLink]="['/jobs', job.id]">
+              {{ job.extractionStatus === 'DRAFT' ? 'Continuer' : 'Modifier' }}
+            </a>
+            @if (job.extractionStatus === 'CONFIRMED') {
+              <button class="btn btn-primary btn-sm" type="button" (click)="analyze(job)">
+                <sm-icon name="analysis" [size]="15" /> Analyser
+              </button>
+            }
+            <button class="btn btn-ghost btn-icon" type="button" (click)="delete(job)" aria-label="Supprimer l'offre">
+              <sm-icon name="trash" [size]="16" />
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

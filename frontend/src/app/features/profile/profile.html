@@ -1,0 +1,477 @@
+@if (loading()) {
+  <div class="loading-panel"><span class="spinner lg"></span>Chargement de votre profil…</div>
+} @else {
+  <div class="fade-in">
+    <div class="page-head row between wrap">
+      <div>
+        <h1>Mon profil — Skill DNA</h1>
+        <p>
+          {{ profile()?.targetJob ? 'Objectif : ' + profile()?.targetJob : 'Complétez votre objectif professionnel' }}
+          @if (profile()?.domain) { <span class="dot-sep"></span> {{ profile()?.domain }} }
+        </p>
+      </div>
+      <button class="btn btn-secondary" type="button" (click)="openProfileModal()">
+        <sm-icon name="settings" [size]="16" /> Modifier le profil
+      </button>
+    </div>
+
+    <div class="grid grid-3">
+      <!-- Skill DNA radar -->
+      <div class="card dna-card">
+        <div class="card-title">Votre constellation</div>
+        @if (radarSkills().length >= 3) {
+          <div class="radar-wrap">
+            <svg viewBox="0 0 240 240" role="img"
+                 aria-label="Radar des compétences : représentation visuelle des huit premières compétences et de leur niveau">
+              <polygon [attr.points]="ringPolygon(1)" fill="none" stroke="#E6E4F0" />
+              <polygon [attr.points]="ringPolygon(0.66)" fill="none" stroke="#EDECF4" />
+              <polygon [attr.points]="ringPolygon(0.33)" fill="none" stroke="#F2F1F7" />
+              @for (skill of radarSkills(); track skill.id; let i = $index) {
+                <line [attr.x1]="center" [attr.y1]="center"
+                      [attr.x2]="radarAxis(skill, i).x" [attr.y2]="radarAxis(skill, i).y"
+                      stroke="#EDECF4" />
+              }
+              <polygon [attr.points]="radarPointsString()" fill="rgba(124,92,252,0.22)"
+                       stroke="#7C5CFC" stroke-width="2" stroke-linejoin="round" />
+              @for (skill of radarSkills(); track skill.id; let i = $index) {
+                <circle [attr.cx]="radarAxis(skill, i).x" [attr.cy]="radarAxis(skill, i).y" r="4"
+                        [attr.fill]="skill.status === 'DEMONSTRATED' ? '#13B88A' : '#7C5CFC'"
+                        [class.hovered]="hoveredSkill() === skill.name" />
+              }
+            </svg>
+          </div>
+          <ul class="radar-legend">
+            @for (skill of radarSkills(); track skill.id) {
+              <li [class.hovered]="hoveredSkill() === skill.name" (mouseenter)="hoveredSkill.set(skill.name)"
+                  (mouseleave)="hoveredSkill.set(null)">
+                <span class="legend-dot"
+                      [class.mint]="skill.status === 'DEMONSTRATED'"></span>
+                {{ skill.name }}
+                <span class="tiny muted">— {{ levelLabels[skill.level] }}</span>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="small muted mt-2">
+            Ajoutez au moins trois compétences pour faire apparaître votre constellation.
+          </p>
+        }
+        <div class="dna-stats mt-3">
+          <div><span class="stat-mini mint">{{ demonstratedCount() }}</span><span class="tiny muted">démontrées</span></div>
+          <div><span class="stat-mini violet">{{ skills().length }}</span><span class="tiny muted">déclarées</span></div>
+          <div><span class="stat-mini">{{ verifiedProofs() }}</span><span class="tiny muted">preuves validées</span></div>
+        </div>
+      </div>
+
+      <!-- Identity -->
+      <div class="card" style="grid-column: span 2">
+        <div class="card-title">Situation &amp; objectif</div>
+        <div class="grid grid-2 mt-2">
+          <div class="info-line">
+            <span class="tiny muted">Situation actuelle</span>
+            <span class="strong">{{ profile()?.situation ? situations[profile()!.situation!] : '—' }}</span>
+          </div>
+          <div class="info-line">
+            <span class="tiny muted">Domaine</span>
+            <span class="strong">{{ profile()?.domain || '—' }}</span>
+          </div>
+          <div class="info-line">
+            <span class="tiny muted">Niveau d'études</span>
+            <span class="strong">{{ profile()?.educationLevel || '—' }}</span>
+          </div>
+          <div class="info-line">
+            <span class="tiny muted">Objectif</span>
+            <span class="strong">{{ profile()?.targetJob || '—' }}</span>
+          </div>
+          <div class="info-line">
+            <span class="tiny muted">Type de poste</span>
+            <span class="strong">{{ profile()?.positionType || '—' }}</span>
+          </div>
+          <div class="info-line">
+            <span class="tiny muted">Rythme</span>
+            <span class="strong">{{ profile()?.hoursPerWeek ? profile()?.hoursPerWeek + ' h / semaine' : '—' }}</span>
+          </div>
+        </div>
+        @if (profile()?.bio) {
+          <p class="small muted mt-2">{{ profile()?.bio }}</p>
+        }
+        <div class="row wrap mt-3">
+          @if (profile()?.githubUrl) {
+            <a class="chip" [href]="profile()!.githubUrl" target="_blank" rel="noopener">
+              <sm-icon name="link" [size]="14" /> GitHub
+            </a>
+          }
+          @if (profile()?.portfolioUrl) {
+            <a class="chip" [href]="profile()!.portfolioUrl" target="_blank" rel="noopener">
+              <sm-icon name="link" [size]="14" /> Portfolio
+            </a>
+          }
+          <a class="chip" routerLink="/analysis"><sm-icon name="analysis" [size]="14" /> Historique des analyses</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Skills -->
+    <div class="card mt-3">
+      <div class="card-title">
+        Mes compétences ({{ skills().length }})
+        <button class="btn btn-primary btn-sm" type="button" (click)="modal.set('skill')">
+          <sm-icon name="plus" [size]="14" /> Ajouter
+        </button>
+      </div>
+
+      @if (skills().length > 0) {
+        <div class="table-wrap mt-2">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">Compétence</th>
+                <th scope="col">Catégorie</th>
+                <th scope="col">Niveau</th>
+                <th scope="col">Statut</th>
+                <th scope="col"><span class="sr-only">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (skill of skills(); track skill.id) {
+                <tr>
+                  <td class="strong">{{ skill.name }}</td>
+                  <td class="muted small">{{ skill.category }}</td>
+                  <td>
+                    <select class="select" style="padding: 6px 10px; width: auto"
+                            [ngModel]="skill.level" (ngModelChange)="setLevel(skill, $event)"
+                            [attr.aria-label]="'Niveau pour ' + skill.name">
+                      @for (level of levelValues; track level) {
+                        <option [value]="level">{{ levelLabels[level] }}</option>
+                      }
+                    </select>
+                  </td>
+                  <td>
+                    <span class="badge" [class]="statusClasses[skill.status]">
+                      {{ statusLabels[skill.status] }}
+                    </span>
+                  </td>
+                  <td class="right">
+                    <button class="btn btn-ghost btn-icon" type="button" (click)="removeSkill(skill)"
+                            [attr.aria-label]="'Retirer ' + skill.name">
+                      <sm-icon name="trash" [size]="16" />
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <p class="tiny muted mt-2">
+          Statuts : <strong>déclarée</strong> = auto-évaluée · <strong>évaluée</strong> = projet validé ·
+          <strong>démontrée</strong> = preuve acceptée par le système.
+        </p>
+      } @else {
+        <div class="empty-state mt-2">
+          <h3>Aucune compétence</h3>
+          <p>Ajoutez vos compétences pour constituer votre Skill DNA.</p>
+          <button class="btn btn-primary" type="button" (click)="modal.set('skill')">Ajouter une compétence</button>
+        </div>
+      }
+    </div>
+
+    <!-- Portfolio -->
+    <div class="grid grid-3 mt-3">
+      <div class="card">
+        <div class="card-title">
+          Expériences
+          <button class="btn btn-secondary btn-sm" type="button" (click)="modal.set('experience')">
+            <sm-icon name="plus" [size]="14" />
+          </button>
+        </div>
+        @for (experience of experiences(); track experience.id) {
+          <div class="portfolio-item">
+            <div class="strong small">{{ experience.title }}</div>
+            <div class="tiny muted">
+              {{ experience.organization || '—' }} · {{ experience.startDate }}{{ experience.endDate ? ' → ' + experience.endDate : '' }}
+            </div>
+            <button class="btn btn-ghost btn-sm" type="button" (click)="deleteExperience(experience)">
+              <sm-icon name="trash" [size]="14" />
+            </button>
+          </div>
+        } @empty {
+          <p class="small muted mt-2">Aucune expérience renseignée.</p>
+        }
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          Projets
+          <button class="btn btn-secondary btn-sm" type="button" (click)="modal.set('project')">
+            <sm-icon name="plus" [size]="14" />
+          </button>
+        </div>
+        @for (project of projects(); track project.id) {
+          <div class="portfolio-item">
+            <div class="strong small">{{ project.name }}</div>
+            @if (project.repositoryUrl) {
+              <a class="tiny" [href]="project.repositoryUrl" target="_blank" rel="noopener">
+                {{ project.repositoryUrl }}
+              </a>
+            }
+            <button class="btn btn-ghost btn-sm" type="button" (click)="deleteProject(project)">
+              <sm-icon name="trash" [size]="14" />
+            </button>
+          </div>
+        } @empty {
+          <p class="small muted mt-2">Aucun projet personnel.</p>
+        }
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          Certifications
+          <button class="btn btn-secondary btn-sm" type="button" (click)="modal.set('certificate')">
+            <sm-icon name="plus" [size]="14" />
+          </button>
+        </div>
+        @for (certificate of certificates(); track certificate.id) {
+          <div class="portfolio-item">
+            <div class="strong small">{{ certificate.name }}</div>
+            <div class="tiny muted">{{ certificate.issuer || '—' }} {{ certificate.issuedDate ? '· ' + certificate.issuedDate : '' }}</div>
+            <button class="btn btn-ghost btn-sm" type="button" (click)="deleteCertificate(certificate)">
+              <sm-icon name="trash" [size]="14" />
+            </button>
+          </div>
+        } @empty {
+          <p class="small muted mt-2">Aucune certification.</p>
+        }
+      </div>
+    </div>
+
+    <!-- Evidence -->
+    <div class="card mt-3">
+      <div class="card-title">Preuves de réalisations</div>
+      @if (evidences().length > 0) {
+        <div class="col mt-2" style="gap: 8px">
+          @for (evidence of evidences(); track evidence.id) {
+            <div class="list-item">
+              <div class="row" style="gap: 10px">
+                <sm-icon [name]="evidence.type === 'FILE' ? 'file' : evidence.type === 'REPORT' ? 'file' : 'link'" [size]="17" />
+                <div>
+                  <div class="small strong">{{ evidence.skillName }}</div>
+                  <div class="tiny muted">
+                    {{ evidence.url || evidence.fileName || 'Rapport' }}
+                    · soumise le {{ evidence.createdAt | date: 'dd/MM/yyyy' }}
+                  </div>
+                </div>
+              </div>
+              <div class="row" style="gap: 8px">
+                <span class="badge" [class]="evidence.status === 'VERIFIED' ? 'badge-mint' : 'badge-slate'">
+                  {{ evidence.status === 'VERIFIED' ? 'Vérifiée' : 'Soumise' }}
+                </span>
+                @if (evidence.fileName) {
+                  <button class="btn btn-ghost btn-sm" type="button" (click)="downloadEvidence(evidence)">
+                    Télécharger
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="small muted mt-2">
+          Aucune preuve pour l'instant. Soumettez un lien ou un rapport depuis un parcours pour
+          faire démontrer une compétence.
+        </p>
+      }
+    </div>
+  </div>
+
+  <!-- Modals -->
+  @if (modal() === 'profile') {
+    <div class="modal-backdrop" (click)="closeModal()">
+      <div class="modal" role="dialog" aria-modal="true" aria-label="Modifier le profil" (click)="$event.stopPropagation()">
+        <div class="modal-head">
+          <h3>Modifier mon profil</h3>
+          <button class="modal-close" type="button" (click)="closeModal()" aria-label="Fermer">
+            <sm-icon name="close" [size]="15" />
+          </button>
+        </div>
+        <div class="col">
+          <div class="grid grid-2">
+            <div class="field">
+              <label for="p-situation">Situation</label>
+              <select id="p-situation" class="select" [(ngModel)]="draftProfile.situation">
+                @for (entry of situations | keyvalue; track entry.key) {
+                  <option [value]="entry.key">{{ entry.value }}</option>
+                }
+              </select>
+            </div>
+            <div class="field">
+              <label for="p-domain">Domaine</label>
+              <input id="p-domain" class="input" [(ngModel)]="draftProfile.domain" />
+            </div>
+            <div class="field">
+              <label for="p-education">Niveau d'études</label>
+              <input id="p-education" class="input" [(ngModel)]="draftProfile.educationLevel" />
+            </div>
+            <div class="field">
+              <label for="p-target">Objectif : métier visé</label>
+              <input id="p-target" class="input" [(ngModel)]="draftProfile.targetJob" />
+            </div>
+            <div class="field">
+              <label for="p-goal">Objectif principal</label>
+              <select id="p-goal" class="select" [(ngModel)]="draftProfile.careerGoal">
+                <option value="FIRST_JOB">Obtenir un premier emploi</option>
+                <option value="PROGRESSION">Progresser</option>
+                <option value="CAREER_CHANGE">Me reconvertir</option>
+                <option value="UNDEFINED">Je ne sais pas encore</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="p-position">Type de poste</label>
+              <select id="p-position" class="select" [(ngModel)]="draftProfile.positionType">
+                <option value="INTERNSHIP">Stage</option>
+                <option value="JUNIOR">Junior</option>
+                <option value="EXPERIENCED">Expérimenté</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="p-hours">Heures / semaine</label>
+              <input id="p-hours" type="number" class="input" min="1" max="80"
+                     [(ngModel)]="draftProfile.hoursPerWeek" />
+            </div>
+            <div class="field">
+              <label for="p-headline">Titre court</label>
+              <input id="p-headline" class="input" [(ngModel)]="draftProfile.headline" placeholder="Étudiant en M1 info, à l'écoute d'alternances" />
+            </div>
+          </div>
+          <div class="field">
+            <label for="p-bio">À propos</label>
+            <textarea id="p-bio" class="textarea" [(ngModel)]="draftProfile.bio"></textarea>
+          </div>
+          <div class="grid grid-2">
+            <div class="field">
+              <label for="p-github">GitHub</label>
+              <input id="p-github" class="input" [(ngModel)]="draftProfile.githubUrl" />
+            </div>
+            <div class="field">
+              <label for="p-portfolio">Portfolio</label>
+              <input id="p-portfolio" class="input" [(ngModel)]="draftProfile.portfolioUrl" />
+            </div>
+          </div>
+        </div>
+        <div class="row end mt-3">
+          <button class="btn btn-ghost" type="button" (click)="closeModal()">Annuler</button>
+          <button class="btn btn-primary" type="button" (click)="saveProfile()" [disabled]="busy()">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (modal() === 'skill') {
+    <div class="modal-backdrop" (click)="closeModal()">
+      <div class="modal" role="dialog" aria-modal="true" aria-label="Ajouter une compétence" (click)="$event.stopPropagation()">
+        <div class="modal-head">
+          <h3>Ajouter une compétence</h3>
+          <button class="modal-close" type="button" (click)="closeModal()" aria-label="Fermer">
+            <sm-icon name="close" [size]="15" />
+          </button>
+        </div>
+        <div class="field">
+          <label for="skill-modal-search">Rechercher dans le référentiel</label>
+          <input id="skill-modal-search" class="input" placeholder="React, SQL, Docker…"
+                 [value]="skillSearch()" (input)="skillSearch.set($any($event.target).value)" />
+        </div>
+        <div class="skill-cloud mt-2">
+          @for (skill of filteredReferenceSkills(); track skill.id) {
+            <button type="button" class="chip chip-select" (click)="addSkill(skill)">
+              <sm-icon name="plus" [size]="13" /> {{ skill.name }}
+            </button>
+          } @empty {
+            <p class="small muted">Aucune compétence disponible (ou déjà toutes ajoutées).</p>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (modal() === 'experience') {
+    <div class="modal-backdrop" (click)="closeModal()">
+      <div class="modal" role="dialog" aria-modal="true" aria-label="Ajouter une expérience" (click)="$event.stopPropagation()">
+        <div class="modal-head">
+          <h3>Nouvelle expérience</h3>
+          <button class="modal-close" type="button" (click)="closeModal()" aria-label="Fermer"><sm-icon name="close" [size]="15" /></button>
+        </div>
+        <div class="col">
+          <div class="field"><label for="e-title">Intitulé *</label>
+            <input id="e-title" class="input" [(ngModel)]="draftExperience.title" /></div>
+          <div class="field"><label for="e-org">Organisation</label>
+            <input id="e-org" class="input" [(ngModel)]="draftExperience.organization" /></div>
+          <div class="grid grid-2">
+            <div class="field"><label for="e-start">Début</label>
+              <input id="e-start" class="input" placeholder="2025-04" [(ngModel)]="draftExperience.startDate" /></div>
+            <div class="field"><label for="e-end">Fin</label>
+              <input id="e-end" class="input" placeholder="2025-07" [(ngModel)]="draftExperience.endDate" /></div>
+          </div>
+          <div class="field"><label for="e-desc">Description</label>
+            <textarea id="e-desc" class="textarea" [(ngModel)]="draftExperience.description"></textarea></div>
+        </div>
+        <div class="row end mt-3">
+          <button class="btn btn-ghost" type="button" (click)="closeModal()">Annuler</button>
+          <button class="btn btn-primary" type="button" (click)="saveExperience()" [disabled]="busy()">Ajouter</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (modal() === 'project') {
+    <div class="modal-backdrop" (click)="closeModal()">
+      <div class="modal" role="dialog" aria-modal="true" aria-label="Ajouter un projet" (click)="$event.stopPropagation()">
+        <div class="modal-head">
+          <h3>Nouveau projet</h3>
+          <button class="modal-close" type="button" (click)="closeModal()" aria-label="Fermer"><sm-icon name="close" [size]="15" /></button>
+        </div>
+        <div class="col">
+          <div class="field"><label for="pr-name">Nom du projet *</label>
+            <input id="pr-name" class="input" [(ngModel)]="draftProject.name" /></div>
+          <div class="field"><label for="pr-repo">Dépôt Git</label>
+            <input id="pr-repo" class="input" [(ngModel)]="draftProject.repositoryUrl" /></div>
+          <div class="field"><label for="pr-demo">Lien de démonstration</label>
+            <input id="pr-demo" class="input" [(ngModel)]="draftProject.demoUrl" /></div>
+          <div class="field"><label for="pr-tech">Technologies</label>
+            <input id="pr-tech" class="input" [(ngModel)]="draftProject.technologies" placeholder="Angular, Spring Boot, MySQL" /></div>
+          <div class="field"><label for="pr-desc">Description</label>
+            <textarea id="pr-desc" class="textarea" [(ngModel)]="draftProject.description"></textarea></div>
+        </div>
+        <div class="row end mt-3">
+          <button class="btn btn-ghost" type="button" (click)="closeModal()">Annuler</button>
+          <button class="btn btn-primary" type="button" (click)="saveProject()" [disabled]="busy()">Ajouter</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (modal() === 'certificate') {
+    <div class="modal-backdrop" (click)="closeModal()">
+      <div class="modal" role="dialog" aria-modal="true" aria-label="Ajouter une certification" (click)="$event.stopPropagation()">
+        <div class="modal-head">
+          <h3>Nouvelle certification</h3>
+          <button class="modal-close" type="button" (click)="closeModal()" aria-label="Fermer"><sm-icon name="close" [size]="15" /></button>
+        </div>
+        <div class="col">
+          <div class="field"><label for="c-name">Nom *</label>
+            <input id="c-name" class="input" [(ngModel)]="draftCertificate.name" /></div>
+          <div class="field"><label for="c-issuer">Organisme</label>
+            <input id="c-issuer" class="input" [(ngModel)]="draftCertificate.issuer" /></div>
+          <div class="grid grid-2">
+            <div class="field"><label for="c-date">Date</label>
+              <input id="c-date" class="input" placeholder="2025-06" [(ngModel)]="draftCertificate.issuedDate" /></div>
+            <div class="field"><label for="c-url">Lien</label>
+              <input id="c-url" class="input" [(ngModel)]="draftCertificate.url" /></div>
+          </div>
+        </div>
+        <div class="row end mt-3">
+          <button class="btn btn-ghost" type="button" (click)="closeModal()">Annuler</button>
+          <button class="btn btn-primary" type="button" (click)="saveCertificate()" [disabled]="busy()">Ajouter</button>
+        </div>
+      </div>
+    </div>
+  }
+}

@@ -1,0 +1,73 @@
+CREATE TABLE skills (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(120) NOT NULL,
+  normalized_name VARCHAR(140) NOT NULL,
+  category VARCHAR(40) NOT NULL,
+  is_custom BOOLEAN NOT NULL DEFAULT FALSE,
+  created_by BIGINT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_skill_creator FOREIGN KEY (created_by) REFERENCES users (id) ON DELETE SET NULL
+);
+
+CREATE UNIQUE INDEX uq_skills_normalized ON skills (normalized_name);
+CREATE INDEX idx_skills_category ON skills (category);
+
+CREATE TABLE user_skills (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT NOT NULL,
+  skill_id BIGINT NOT NULL,
+  skill_name VARCHAR(120) NOT NULL,
+  normalized_name VARCHAR(140) NOT NULL,
+  category VARCHAR(40) NOT NULL,
+  level VARCHAR(30) NOT NULL DEFAULT 'UNKNOWN',
+  status VARCHAR(30) NOT NULL DEFAULT 'DECLARED',
+  notes VARCHAR(1000) NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_userskill_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+  CONSTRAINT fk_userskill_skill FOREIGN KEY (skill_id) REFERENCES skills (id) ON DELETE CASCADE
+);
+
+CREATE UNIQUE INDEX uq_userskill_user_skill ON user_skills (user_id, skill_id);
+CREATE INDEX idx_userskill_normalized ON user_skills (normalized_name);
+
+CREATE TABLE experiences (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT NOT NULL,
+  title VARCHAR(190) NOT NULL,
+  organization VARCHAR(190) NULL,
+  type VARCHAR(40) NOT NULL DEFAULT 'INTERNSHIP',
+  description VARCHAR(4000) NULL,
+  start_date VARCHAR(30) NULL,
+  end_date VARCHAR(30) NULL,
+  is_current BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_experience_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);
+
+CREATE TABLE certificates (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT NOT NULL,
+  name VARCHAR(190) NOT NULL,
+  issuer VARCHAR(190) NULL,
+  issued_date VARCHAR(30) NULL,
+  url VARCHAR(400) NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_certificate_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);
+
+CREATE TABLE projects (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT NOT NULL,
+  name VARCHAR(190) NOT NULL,
+  description VARCHAR(4000) NULL,
+  repository_url VARCHAR(400) NULL,
+  demo_url VARCHAR(400) NULL,
+  technologies VARCHAR(600) NULL,
+  started_date VARCHAR(30) NULL,
+  ended_date VARCHAR(30) NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_project_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);

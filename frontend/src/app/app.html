@@ -1,0 +1,14 @@
+<router-outlet />
+
+<!-- Toast notifications -->
+<div class="toast-stack" role="status" aria-live="polite">
+  @for (toast of notify.toasts(); track toast.id) {
+    <div class="toast" [class.success]="toast.kind === 'success'" [class.error]="toast.kind === 'error'">
+      <sm-icon [name]="toast.kind === 'error' ? 'alert' : toast.kind === 'success' ? 'check' : 'info'" [size]="17" />
+      <span>{{ toast.message }}</span>
+      <button class="toast-close" (click)="notify.dismiss(toast.id)" aria-label="Fermer la notification">
+        <sm-icon name="close" [size]="14" />
+      </button>
+    </div>
+  }
+</div>

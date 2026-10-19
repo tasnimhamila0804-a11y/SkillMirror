@@ -1,0 +1,255 @@
+<!-- Navbar -->
+<nav class="public-nav">
+  <div class="inner">
+    <a class="row" routerLink="/" aria-label="SkillMirror — accueil" style="gap: 10px">
+      <svg width="28" height="28" viewBox="0 0 32 32" aria-hidden="true">
+        <defs>
+          <linearGradient id="nav-logo" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#7C5CFC" />
+            <stop offset="1" stop-color="#13B88A" />
+          </linearGradient>
+        </defs>
+        <circle cx="16" cy="16" r="13" stroke="url(#nav-logo)" stroke-width="2.4" fill="none" />
+        <path d="M16 3a13 13 0 0 1 0 26z" fill="url(#nav-logo)" opacity="0.85" />
+        <circle cx="16" cy="16" r="4.5" fill="#11152B" />
+      </svg>
+      <span style="font-family: var(--font-display); font-weight: 800; font-size: 1.1rem; color: var(--midnight)">
+        Skill<span style="color: var(--violet)">Mirror</span>
+      </span>
+    </a>
+    <div class="links hide-mobile">
+      <a href="#fonctionnement">Fonctionnement</a>
+      <a href="#fonctionnalites">Fonctionnalités</a>
+      <a href="#parcours">Du gap au projet</a>
+      <a href="#benefices">Bénéfices</a>
+    </div>
+    <div class="row">
+      <a class="btn btn-ghost btn-sm" routerLink="/auth/login">Connexion</a>
+      <a class="btn btn-primary btn-sm" routerLink="/auth/register">Créer un compte</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<header class="hero">
+  <div class="hero-inner">
+    <div class="fade-in">
+      <span class="kicker"><sm-icon name="spark" [size]="14" /> Career Intelligence Studio</span>
+      <h1 class="mt-3">Your skills are<br />just the beginning.</h1>
+      <p class="lead mt-3">
+        SkillMirror transforme vos lacunes en opportunités : analysez une offre réelle, découvrez votre
+        score de compatibilité, et recevez des projets pratiques qui transforment chaque compétence
+        manquante en preuve concrète.
+      </p>
+      <div class="row wrap mt-4">
+        <a class="btn btn-primary btn-lg" routerLink="/auth/register">
+          Analyser mon profil <sm-icon name="arrow-right" [size]="17" />
+        </a>
+        <a class="btn btn-secondary btn-lg" href="#fonctionnement">Découvrir la plateforme</a>
+      </div>
+      <div class="row wrap mt-4 tiny muted">
+        <span class="row" style="gap: 6px"><sm-icon name="check" [size]="14" /> Sans carte bancaire</span>
+        <span class="dot-sep"></span>
+        <span class="row" style="gap: 6px"><sm-icon name="check" [size]="14" /> Mode démonstration disponible</span>
+        <span class="dot-sep"></span>
+        <span class="row" style="gap: 6px"><sm-icon name="check" [size]="14" /> Données chiffrées et isolées</span>
+      </div>
+    </div>
+
+    <!-- Product preview (illustrative interface, not user data) -->
+    <div class="preview fade-in" aria-hidden="true">
+      <div class="preview-card">
+        <div class="row between">
+          <div>
+            <div class="tiny muted">Analyse — Développeur Full Stack Junior</div>
+            <div class="strong mt-1" style="color: var(--midnight)">Votre adéquation</div>
+          </div>
+          <div class="preview-ring">
+            <svg width="92" height="92" viewBox="0 0 92 92">
+              <circle cx="46" cy="46" r="38" fill="none" stroke="#ECEBF3" stroke-width="9" />
+              <circle cx="46" cy="46" r="38" fill="none" stroke="url(#previewGrad)" stroke-width="9"
+                      stroke-linecap="round" stroke-dasharray="238.8" stroke-dashoffset="76"
+                      transform="rotate(-90 46 46)" />
+              <defs>
+                <linearGradient id="previewGrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#7C5CFC" />
+                  <stop offset="1" stop-color="#13B88A" />
+                </linearGradient>
+              </defs>
+            </svg>
+            <div class="preview-ring-value">68</div>
+          </div>
+        </div>
+
+        <div class="preview-skills">
+          <div class="preview-skill">
+            <span class="badge badge-mint">Démontrée</span> <span>Java</span>
+            <div class="progress mint" style="flex: 1"><span style="width: 100%"></span></div>
+          </div>
+          <div class="preview-skill">
+            <span class="badge badge-violet">Déclarée</span> <span>Angular</span>
+            <div class="progress" style="flex: 1"><span style="width: 75%"></span></div>
+          </div>
+          <div class="preview-skill">
+            <span class="badge badge-amber">À progresser</span> <span>SQL</span>
+            <div class="progress" style="flex: 1"><span style="width: 40%"></span></div>
+          </div>
+        </div>
+
+        <div class="preview-path">
+          <div class="row between">
+            <span class="tiny strong" style="color: var(--midnight)">Parcours recommandé — SQL avancé</span>
+            <span class="tiny muted">3/6 tâches</span>
+          </div>
+          <div class="progress mt-1"><span style="width: 50%"></span></div>
+          <div class="tiny muted mt-1">Preuve attendue : dépôt Git public + rapport d'analyse</div>
+        </div>
+      </div>
+      <div class="preview-caption tiny muted">Aperçu illustratif de l'interface — les données affichées sont générées à partir de vos analyses.</div>
+    </div>
+  </div>
+</header>
+
+<!-- How it works -->
+<section class="section" id="fonctionnement">
+  <div class="section-inner">
+    <div class="section-head centered">
+      <span class="badge badge-violet">Fonctionnement</span>
+      <h2>Quatre étapes, un cap clair</h2>
+      <p class="muted" style="max-width: 620px">
+        De la première question à la preuve validée, SkillMirror orchestre un parcours continu et
+        explicable.
+      </p>
+    </div>
+    <div class="grid grid-4 mt-4">
+      @for (step of steps; track step.title; let i = $index) {
+        <div class="card pad-sm hover">
+          <div class="row between mb-2">
+            <div class="step-num">{{ i + 1 }}</div>
+            <sm-icon [name]="step.icon" [size]="22" style="color: var(--violet)" />
+          </div>
+          <h3>{{ step.title }}</h3>
+          <p class="small muted mt-1">{{ step.description }}</p>
+        </div>
+      }
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="section alt" id="fonctionnalites">
+  <div class="section-inner">
+    <div class="section-head centered">
+      <span class="badge badge-violet">Fonctionnalités</span>
+      <h2>Un studio complet d'intelligence de carrière</h2>
+    </div>
+    <div class="grid grid-3 mt-4">
+      @for (feature of features; track feature.title) {
+        <div class="card hover">
+          <div class="feature-icon"><sm-icon [name]="feature.icon" [size]="22" /></div>
+          <h3 class="mt-2">{{ feature.title }}</h3>
+          <p class="small muted mt-1">{{ feature.description }}</p>
+        </div>
+      }
+    </div>
+  </div>
+</section>
+
+<!-- Gap to project -->
+<section class="section" id="parcours">
+  <div class="section-inner">
+    <div class="section-head centered">
+      <span class="badge badge-mint">Du gap au projet</span>
+      <h2>Une lacune identifiée devient une réalisation</h2>
+    </div>
+    <div class="gap-flow mt-4">
+      <div class="card gap-step">
+        <span class="badge badge-danger">Manquante</span>
+        <h3 class="mt-2">SQL</h3>
+        <p class="small muted">Exigée en poids 3 dans l'offre, absente du profil. Jamais comptée comme acquise.</p>
+      </div>
+      <div class="gap-arrow" aria-hidden="true"><sm-icon name="arrow-right" [size]="26" /></div>
+      <div class="card gap-step">
+        <span class="badge badge-violet">Projet généré</span>
+        <h3 class="mt-2">Base de données &amp; analyse</h3>
+        <p class="small muted">Schéma, 10 requêtes, agrégations, rapport final. Calibré pour 8 h/semaine.</p>
+        <ul class="small muted checklist">
+          <li>Étapes et tâches détaillées</li>
+          <li>Critères d'évaluation explicites</li>
+        </ul>
+      </div>
+      <div class="gap-arrow" aria-hidden="true"><sm-icon name="arrow-right" [size]="26" /></div>
+      <div class="card gap-step done">
+        <span class="badge badge-mint">Démontrée</span>
+        <h3 class="mt-2">Preuve validée</h3>
+        <p class="small muted">Dépôt Git public accepté : la compétence est vérifiée et le score augmente durablement.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Benefits -->
+<section class="section alt" id="benefices">
+  <div class="section-inner">
+    <div class="section-head centered">
+      <span class="badge badge-violet">Pour qui ?</span>
+      <h2>Étudiants et jeunes diplômés, prenez de l'avance</h2>
+    </div>
+    <div class="grid grid-3 mt-4">
+      @for (benefit of benefits; track benefit.title) {
+        <div class="card hover">
+          <h3>{{ benefit.title }}</h3>
+          <p class="small muted mt-1">{{ benefit.description }}</p>
+        </div>
+      }
+    </div>
+    <div class="cta-band mt-4">
+      <div>
+        <h2 style="color: #fff">See your skills. Unlock your potential.</h2>
+        <p class="mt-1" style="color: #C9CBDC">Créez votre profil en quelques minutes et lancez votre première analyse.</p>
+      </div>
+      <a class="btn btn-mint btn-lg" routerLink="/auth/register">Commencer gratuitement</a>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div>
+      <div class="row" style="gap: 10px">
+        <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true">
+          <circle cx="16" cy="16" r="13" stroke="#7C5CFC" stroke-width="2.4" fill="none" />
+          <path d="M16 3a13 13 0 0 1 0 26z" fill="#7C5CFC" opacity="0.85" />
+          <circle cx="16" cy="16" r="4.5" fill="#11152B" />
+        </svg>
+        <span style="color: #fff; font-family: var(--font-display); font-weight: 800">SkillMirror</span>
+      </div>
+      <p class="small mt-2" style="max-width: 300px">
+        Plateforme d'intelligence de carrière : analyse d'offres, écarts de compétences, projets
+        pratiques et preuves de réalisations.
+      </p>
+    </div>
+    <div>
+      <h4>Produit</h4>
+      <a href="#fonctionnement">Fonctionnement</a>
+      <a href="#fonctionnalites">Fonctionnalités</a>
+      <a href="#parcours">Du gap au projet</a>
+    </div>
+    <div>
+      <h4>Compte</h4>
+      <a routerLink="/auth/login">Connexion</a>
+      <a routerLink="/auth/register">Inscription</a>
+    </div>
+    <div>
+      <h4>Contact &amp; légal</h4>
+      <a href="mailto:contact@skillmirror.app">contact&#64;skillmirror.app</a>
+      <a href="#" (click)="$event.preventDefault()">Mentions légales</a>
+      <a href="#" (click)="$event.preventDefault()">Confidentialité</a>
+    </div>
+  </div>
+  <div class="bottom">
+    <span>© {{ year }} SkillMirror — Projet MVP. Les scores sont des indicateurs internes de compatibilité.</span>
+    <span>See your skills. Unlock your potential.</span>
+  </div>
+</footer>

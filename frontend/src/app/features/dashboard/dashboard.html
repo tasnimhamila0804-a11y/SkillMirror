@@ -1,0 +1,192 @@
+@if (loading()) {
+  <div class="loading-panel"><span class="spinner lg"></span>Chargement de votre tableau de bord…</div>
+} @else if (data(); as dashboard) {
+  <div class="fade-in">
+    <div class="page-head row between wrap">
+      <div>
+        <h1>Bonjour {{ dashboard.firstName }}</h1>
+        <p>
+          Voici où vous en êtes aujourd'hui.
+          @if (dashboard.lastScore !== null) {
+            Dernière analyse : {{ dashboard.lastScoreJob }} — {{ shortDate(dashboard.lastAnalysisDate) }}.
+          }
+        </p>
+      </div>
+      <a class="btn btn-primary" routerLink="/jobs/new">
+        <sm-icon name="spark" [size]="16" /> Nouvelle analyse
+      </a>
+    </div>
+
+    @if (dashboard.emptyState) {
+      <sm-empty-state
+        title="Construisons votre premier miroir"
+        description="Répondez au questionnaire de profilage, puis analysez une offre d'emploi réelle pour obtenir votre score de compatibilité et vos premiers projets."
+        icon="mirror"
+        actionLabel="Commencer le profilage"
+        actionUrl="/questionnaire" />
+    }
+
+    <div class="grid grid-4 mt-3">
+      <div class="stat-card">
+        <span class="stat-label">Score de compatibilité</span>
+        <span class="stat-value" [class.violet]="dashboard.lastScore !== null">
+          {{ dashboard.lastScore !== null ? dashboard.lastScore + '/100' : '—' }}
+        </span>
+        <span class="stat-sub">
+          {{ dashboard.lastScoreJob ? dashboard.lastScoreJob : 'Aucune analyse pour le moment' }}
+        </span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Offres analysées</span>
+        <span class="stat-value">{{ dashboard.stats.offersCount }}</span>
+        <span class="stat-sub">{{ dashboard.stats.analysesCount }} analyse(s) sauvegardée(s)</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Parcours en cours</span>
+        <span class="stat-value">{{ dashboard.stats.activePaths }}</span>
+        <span class="stat-sub">{{ dashboard.stats.completedPaths }} terminé(s)</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Avancement global</span>
+        <span class="stat-value mint">{{ dashboard.stats.progressRate }}%</span>
+        <span class="stat-sub">{{ dashboard.stats.doneTasks }}/{{ dashboard.stats.totalTasks }} tâches</span>
+      </div>
+    </div>
+
+    <div class="grid grid-3 mt-3">
+      <!-- Score + strengths -->
+      <div class="card center-score">
+        @if (dashboard.lastScore !== null) {
+          <sm-score-ring [score]="dashboard.lastScore" [size]="190" />
+          <p class="small muted mt-2">
+            Indicateur interne de compatibilité avec votre dernière offre analysée.
+          </p>
+          <a class="btn btn-secondary btn-sm mt-2" routerLink="/analysis">
+            Voir le détail de l'analyse
+          </a>
+        } @else {
+          <div class="empty-mini">
+            <sm-icon name="target" [size]="30" />
+            <p class="small muted mt-2">Lancez une analyse pour découvrir votre score d'adéquation.</p>
+            <a class="btn btn-primary btn-sm mt-2" routerLink="/jobs/new">Analyser une offre</a>
+          </div>
+        }
+      </div>
+
+      <!-- Priority skills -->
+      <div class="card" style="grid-column: span 2">
+        <div class="card-title">
+          Compétences prioritaires
+          <a class="tiny" routerLink="/analysis">Tout voir</a>
+        </div>
+        @if (dashboard.prioritySkills.length > 0) {
+          <div class="col mt-2" style="gap: 8px">
+            @for (skill of prioritizedSkills(dashboard.prioritySkills); track skill.skillName) {
+              <div class="priority-item">
+                <span class="priority-bar"
+                      [class.high]="skill.matchCategory === 'MISSING'"
+                      [class.medium]="skill.matchCategory === 'PARTIAL'"
+                      [class.low]="skill.matchCategory !== 'MISSING' && skill.matchCategory !== 'PARTIAL'"></span>
+                <div style="flex: 1; min-width: 0">
+                  <div class="row" style="gap: 8px">
+                    <span class="strong">{{ skill.skillName }}</span>
+                    <span class="badge" [class]="matchClasses[skill.matchCategory]">
+                      {{ matchLabels[skill.matchCategory] }}
+                    </span>
+                  </div>
+                  <div class="tiny muted">{{ skill.note }}</div>
+                </div>
+                <a class="btn btn-ghost btn-sm" routerLink="/learning">
+                  <sm-icon name="spark" [size]="15" /> Projet
+                </a>
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="small muted mt-2">
+            Aucun écart détecté pour l'instant. Analysez une offre pour identifier vos priorités.
+          </p>
+        }
+      </div>
+    </div>
+
+    <div class="grid grid-2 mt-3">
+      <!-- Recommended actions -->
+      <div class="card">
+        <div class="card-title">Prochaines actions recommandées</div>
+        @if (dashboard.recommendedActions.length > 0) {
+          <div class="col mt-2" style="gap: 10px">
+            @for (action of dashboard.recommendedActions; track action.title) {
+              <a class="action-item" [routerLink]="action.url">
+                <div class="action-icon">
+                  <sm-icon [name]="action.priority === 'HIGH' ? 'spark' : action.priority === 'MEDIUM' ? 'arrow-right' : 'check'" [size]="17" />
+                </div>
+                <div style="flex: 1">
+                  <div class="strong small">{{ action.title }}</div>
+                  <div class="tiny muted">{{ action.description }}</div>
+                </div>
+                <sm-icon name="arrow-right" [size]="16" />
+              </a>
+            }
+          </div>
+        } @else {
+          <p class="small muted mt-2">Tout est à jour — beau travail !</p>
+        }
+      </div>
+
+      <!-- Analyses history -->
+      <div class="card">
+        <div class="card-title">
+          Historique des analyses
+          <a class="tiny" routerLink="/analysis">Détail</a>
+        </div>
+        @if (dashboard.recentAnalyses.length > 0) {
+          <div class="col mt-2" style="gap: 8px">
+            @for (analysis of dashboard.recentAnalyses; track analysis.id) {
+              <a class="history-item" [routerLink]="['/analysis', analysis.id]">
+                <div>
+                  <div class="small strong">{{ analysis.jobTitle }}</div>
+                  <div class="tiny muted">{{ analysis.company || 'Entreprise non renseignée' }} · {{ shortDate(analysis.createdAt) }}</div>
+                </div>
+                <span class="history-score" [class.mint]="analysis.score >= 70" [class.violet]="analysis.score >= 45 && analysis.score < 70">
+                  {{ analysis.score }}
+                </span>
+              </a>
+            }
+          </div>
+        } @else {
+          <p class="small muted mt-2">Vos analyses apparaîtront ici.</p>
+        }
+      </div>
+    </div>
+
+    <!-- Skill status overview -->
+    <div class="card mt-3">
+      <div class="card-title">
+        État de vos compétences
+        <span class="tiny muted">Déclarées ≠ démontrées</span>
+      </div>
+      <div class="skill-bars mt-2">
+        <div class="skill-bar">
+          <span class="tiny strong">Démontrées (avec preuve)</span>
+          <div class="progress mint"><span [style.width.%]="dashboard.stats.totalSkills ? (dashboard.stats.demonstratedSkills * 100) / dashboard.stats.totalSkills : 0"></span></div>
+          <span class="tiny muted nowrap">{{ dashboard.stats.demonstratedSkills }}</span>
+        </div>
+        <div class="skill-bar">
+          <span class="tiny strong">Évaluées (projet validé)</span>
+          <div class="progress"><span [style.width.%]="dashboard.stats.totalSkills ? (dashboard.stats.evaluatedSkills * 100) / dashboard.stats.totalSkills : 0"></span></div>
+          <span class="tiny muted nowrap">{{ dashboard.stats.evaluatedSkills }}</span>
+        </div>
+        <div class="skill-bar">
+          <span class="tiny strong">Déclarées (non vérifiées)</span>
+          <div class="progress"><span [style.width.%]="dashboard.stats.totalSkills ? (dashboard.stats.declaredSkills * 100) / dashboard.stats.totalSkills : 0"></span></div>
+          <span class="tiny muted nowrap">{{ dashboard.stats.declaredSkills }}</span>
+        </div>
+      </div>
+      <p class="tiny muted mt-2">
+        Une compétence n'est comptée comme démontrée que lorsqu'une preuve a été acceptée par le
+        système de validation.
+      </p>
+    </div>
+  </div>
+}

@@ -1,0 +1,8 @@
+package com.skillmirror.common;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface ErrorLogRepository extends JpaRepository<ErrorLog, Long> {
+
+    java.util.List<ErrorLog> findTop100ByOrderByCreatedAtDesc();
+}

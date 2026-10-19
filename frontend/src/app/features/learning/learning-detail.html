@@ -1,0 +1,264 @@
+@if (loading()) {
+  <div class="loading-panel"><span class="spinner lg"></span>Chargement du parcours…</div>
+} @else if (path(); as project) {
+  <div class="fade-in">
+    <div class="page-head row between wrap">
+      <div>
+        <a class="tiny" routerLink="/learning">← Tous les parcours</a>
+        <h1 class="mt-1">{{ project.title }}</h1>
+        <p>
+          Compétence ciblée : <strong>{{ project.skillName }}</strong>
+          <span class="dot-sep"></span>{{ difficultyLabels[project.difficulty] || project.difficulty }}
+          @if (project.simulatedAi) {
+            <span class="dot-sep"></span><span class="badge badge-amber">Contenu IA simulé</span>
+          }
+        </p>
+      </div>
+      <div class="row wrap">
+        @if (project.status === 'NOT_STARTED') {
+          <button class="btn btn-primary" type="button" (click)="setStatus('IN_PROGRESS')">
+            <sm-icon name="play" [size]="15" /> Commencer
+          </button>
+        }
+        @if (project.status === 'IN_PROGRESS') {
+          <button class="btn btn-secondary" type="button" (click)="setStatus('PAUSED')">
+            <sm-icon name="pause" [size]="15" /> Mettre en pause
+          </button>
+        }
+        @if (project.status === 'PAUSED') {
+          <button class="btn btn-primary" type="button" (click)="setStatus('IN_PROGRESS')">
+            <sm-icon name="play" [size]="15" /> Reprendre
+          </button>
+        }
+        @if (isDone) {
+          <span class="badge badge-mint" style="font-size: 0.8rem; padding: 8px 14px">
+            {{ project.status === 'VALIDATED' ? 'Parcours validé' : 'Parcours terminé' }}
+          </span>
+        }
+      </div>
+    </div>
+
+    <!-- Progress header -->
+    <div class="card">
+      <div class="row between wrap">
+        <div style="flex: 1; min-width: 240px">
+          <div class="row between">
+            <span class="small strong">Avancement</span>
+            <span class="small strong" style="color: var(--violet-deep)">{{ project.progressPercent }}%</span>
+          </div>
+          <div class="progress mt-1" [class.mint]="project.progressPercent === 100">
+            <span [style.width.%]="project.progressPercent"></span>
+          </div>
+          <div class="tiny muted mt-1">{{ project.doneCount }} / {{ project.taskCount }} tâches terminées</div>
+        </div>
+        <div class="mini-stats">
+          <div class="mini-stat">
+            <span class="mini-value">{{ project.objectives.length }}</span>
+            <span class="tiny muted">objectifs</span>
+          </div>
+          <div class="mini-stat">
+            <span class="mini-value">{{ project.steps.length }}</span>
+            <span class="tiny muted">étapes</span>
+          </div>
+          <div class="mini-stat">
+            <span class="mini-value">{{ project.evidence.length }}</span>
+            <span class="tiny muted">preuve(s)</span>
+          </div>
+        </div>
+      </div>
+      @if (project.validationNote) {
+        <div class="summary-panel mt-3">
+          <sm-icon name="check" [size]="17" />
+          <div class="small">{{ project.validationNote }}</div>
+        </div>
+      }
+    </div>
+
+    <div class="grid grid-3 mt-3">
+      <!-- Objectives -->
+      <div class="card">
+        <div class="card-title">Objectifs pédagogiques</div>
+        <ul class="bullet-list mt-2">
+          @for (objective of project.objectives; track objective) {
+            <li>{{ objective }}</li>
+          } @empty {
+            <li class="muted">Aucun objectif déclaré.</li>
+          }
+        </ul>
+        <div class="card-title mt-3">Outils nécessaires</div>
+        <div class="row wrap mt-1">
+          @for (tool of project.tools; track tool) {
+            <span class="chip">{{ tool }}</span>
+          }
+        </div>
+      </div>
+
+      <!-- Steps -->
+      <div class="card">
+        <div class="card-title">Étapes de réalisation</div>
+        <ol class="bullet-list mt-2">
+          @for (step of project.steps; track step; let i = $index) {
+            <li><strong>Étape {{ i + 1 }}.</strong> {{ step }}</li>
+          } @empty {
+            <li class="muted">Aucune étape détaillée.</li>
+          }
+        </ol>
+        <div class="card-title mt-3">Résultat attendu</div>
+        <p class="small muted mt-1">{{ project.expectedResult || '—' }}</p>
+      </div>
+
+      <!-- Criteria -->
+      <div class="card">
+        <div class="card-title">Critères d'évaluation</div>
+        <ul class="bullet-list mt-2">
+          @for (criterion of project.evaluationCriteria; track criterion) {
+            <li>{{ criterion }}</li>
+          } @empty {
+            <li class="muted">Aucun critère : la validation sera impossible tant qu'ils ne sont pas définis.</li>
+          }
+        </ul>
+        <div class="card-title mt-3">Preuve à fournir</div>
+        <p class="small muted mt-1">{{ project.proofRequired || '—' }}</p>
+      </div>
+    </div>
+
+    <div class="grid grid-2 mt-3">
+      <!-- Tasks -->
+      <div class="card">
+        <div class="card-title">Tâches</div>
+        <div class="mt-2">
+          @for (task of project.tasks; track task.id) {
+            <div class="task-row" [class.done]="task.done">
+              <input type="checkbox" [id]="'task-' + task.id" [checked]="task.done"
+                     (change)="toggleTask(task.id, $any($event.target).checked)" />
+              <div style="flex: 1">
+                <label class="task-title" [for]="'task-' + task.id">{{ task.title }}</label>
+                <div class="mt-1">
+                  <input class="input" style="padding: 6px 10px; font-size: 0.82rem"
+                         placeholder="Note personnelle (optionnelle)"
+                         [ngModel]="noteDrafts()[task.id]"
+                         (ngModelChange)="updateNoteDraft(task.id, $event)"
+                         (blur)="saveNote(task.id)"
+                         [attr.aria-label]="'Note pour ' + task.title" />
+                </div>
+              </div>
+            </div>
+          } @empty {
+            <p class="small muted">Aucune tâche définie.</p>
+          }
+        </div>
+      </div>
+
+      <!-- Evidence -->
+      <div class="col" style="gap: 18px">
+        <div class="card">
+          <div class="card-title">Soumettre une preuve</div>
+          <p class="tiny muted mt-1">
+            Une preuve (lien de dépôt, fichier ou rapport) est indispensable : la validation exige
+            des tâches complètes <em>et</em> une preuve fournie.
+          </p>
+
+          <div class="pill-tabs mt-2" role="group" aria-label="Type de preuve">
+            <button type="button" [class.active]="evidenceType() === 'LINK'" (click)="evidenceType.set('LINK')">Lien</button>
+            <button type="button" [class.active]="evidenceType() === 'REPORT'" (click)="evidenceType.set('REPORT')">Rapport</button>
+          </div>
+
+          @if (evidenceType() === 'LINK') {
+            <div class="field mt-2">
+              <label for="evidence-url">Lien vers votre dépôt / démonstration</label>
+              <input id="evidence-url" class="input" placeholder="https://github.com/vous/projet"
+                     [ngModel]="evidenceUrl()" (ngModelChange)="evidenceUrl.set($event)" />
+            </div>
+          } @else {
+            <div class="field mt-2">
+              <label for="evidence-report">Compte-rendu (20 caractères minimum)</label>
+              <textarea id="evidence-report" class="textarea"
+                        placeholder="Ce que vous avez réalisé, les choix techniques, ce que vous avez appris…"
+                        [ngModel]="evidenceDescription()" (ngModelChange)="evidenceDescription.set($event)"></textarea>
+            </div>
+          }
+
+          <div class="row wrap mt-2">
+            <button class="btn btn-primary btn-sm" type="button" (click)="submitEvidence()"
+                    [disabled]="submittingEvidence()">
+              <sm-icon name="check" [size]="15" /> Soumettre
+            </button>
+            <label class="btn btn-secondary btn-sm" style="cursor: pointer">
+              <sm-icon name="file" [size]="15" /> Joindre un fichier
+              <input type="file" class="sr-only" (change)="uploadFile($event)"
+                     accept=".pdf,.txt,.md,.png,.jpg,.jpeg,.zip,.json,.csv,.docx" />
+            </label>
+            <span class="tiny muted">PDF, images, archives — 5 Mo max.</span>
+          </div>
+        </div>
+
+        @if (project.evidence.length > 0) {
+          <div class="card">
+            <div class="card-title">Preuves soumises</div>
+            <div class="col mt-2" style="gap: 8px">
+              @for (evidence of project.evidence; track evidence.id) {
+                <div class="list-item">
+                  <div class="row" style="gap: 10px; min-width: 0">
+                    <sm-icon [name]="evidence.type === 'LINK' ? 'link' : 'file'" [size]="16" />
+                    <div style="min-width: 0">
+                      <div class="small" style="overflow: hidden; text-overflow: ellipsis">
+                        {{ evidence.url || evidence.fileName || 'Rapport' }}
+                      </div>
+                      @if (evidence.url) {
+                        <a class="tiny" [href]="evidence.url" target="_blank" rel="noopener">Ouvrir le lien</a>
+                      }
+                    </div>
+                  </div>
+                  <div class="row" style="gap: 6px">
+                    <span class="badge" [class]="evidence.status === 'VERIFIED' ? 'badge-mint' : 'badge-slate'">
+                      {{ evidence.status === 'VERIFIED' ? 'Vérifiée' : 'Soumise' }}
+                    </span>
+                    @if (evidence.fileName) {
+                      <button class="btn btn-ghost btn-sm" type="button" (click)="downloadEvidence(evidence)">Télécharger</button>
+                    }
+                    <button class="btn btn-ghost btn-icon" type="button" (click)="removeEvidence(evidence)"
+                            aria-label="Retirer la preuve"><sm-icon name="trash" [size]="15" /></button>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Completion -->
+        @if (isActive) {
+          <div class="card" [class.ready]="check()?.canComplete">
+            <div class="card-title">Validation du parcours</div>
+            @if (check(); as completion) {
+              <ul class="check-list mt-2">
+                <li [class.ok]="completion.totalTasks > 0 && completion.doneTasks === completion.totalTasks">
+                  <sm-icon [name]="completion.totalTasks > 0 && completion.doneTasks === completion.totalTasks ? 'check' : 'close'" [size]="15" />
+                  Toutes les tâches sont terminées ({{ completion.doneTasks }}/{{ completion.totalTasks }})
+                </li>
+                <li [class.ok]="completion.criteriaDefined">
+                  <sm-icon [name]="completion.criteriaDefined ? 'check' : 'close'" [size]="15" />
+                  Critères d'évaluation définis
+                </li>
+                <li [class.ok]="completion.hasProof">
+                  <sm-icon [name]="completion.hasProof ? 'check' : 'close'" [size]="15" />
+                  Une preuve a été soumise
+                </li>
+              </ul>
+              @if (!completion.canComplete) {
+                <p class="tiny muted mt-2">Manque avant validation : {{ completion.missing.join(' ') }}</p>
+              }
+              <button class="btn btn-mint full mt-3" type="button" (click)="complete()"
+                      [disabled]="!completion.canComplete || completing()">
+                @if (completing()) { <span class="spinner mint"></span> }
+                Valider le parcours et faire certifier la compétence
+              </button>
+              <p class="tiny muted mt-2 center">
+                Le backend vérifie ces critères : une tâche cochée ne suffit jamais à certifier une compétence.
+              </p>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+}

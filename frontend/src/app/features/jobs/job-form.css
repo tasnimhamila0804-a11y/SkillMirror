@@ -1,0 +1,51 @@
+.workflow-steps {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.workflow-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #F1F0F7;
+  color: var(--slate);
+  border-radius: var(--r-pill);
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: all var(--t-fast);
+}
+.workflow-step .dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #DCDAE8;
+  color: var(--text-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+}
+.workflow-step.active {
+  background: var(--lavender);
+  color: var(--violet-deep);
+}
+.workflow-step.active .dot {
+  background: var(--violet);
+  color: #fff;
+}
+
+.form-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--danger-soft);
+  color: var(--danger);
+  border: 1px solid #F5C9CB;
+  border-radius: var(--r-md);
+  padding: 10px 14px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  margin-top: 14px;
+}

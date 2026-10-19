@@ -1,0 +1,55 @@
+<div class="fade-in">
+  <div class="page-head row between wrap">
+    <div>
+      <h1>Mes parcours d'apprentissage</h1>
+      <p>Chaque parcours transforme un écart de compétence en projet concret, puis en preuve.</p>
+    </div>
+    <div class="pill-tabs" role="tablist" aria-label="Filtrer les parcours">
+      <button type="button" role="tab" [class.active]="filter() === 'ALL'" (click)="filter.set('ALL')">Tous</button>
+      <button type="button" role="tab" [class.active]="filter() === 'ACTIVE'" (click)="filter.set('ACTIVE')">En cours</button>
+      <button type="button" role="tab" [class.active]="filter() === 'DONE'" (click)="filter.set('DONE')">Terminés</button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-panel"><span class="spinner lg"></span>Chargement de vos parcours…</div>
+  } @else if (paths().length === 0) {
+    <sm-empty-state
+      title="Aucun parcours généré"
+      description="Lancez une analyse d'offre, puis générez un parcours personnalisé pour vos écarts prioritaires : chaque projet se termine par une preuve vérifiable."
+      icon="learning"
+      actionLabel="Voir mes analyses"
+      actionUrl="/analysis" />
+  } @else if (filtered.length === 0) {
+    <div class="empty-state">
+      <h3>Rien dans ce filtre</h3>
+      <p>Changez de filtre pour voir vos autres parcours.</p>
+    </div>
+  } @else {
+    <div class="grid grid-2">
+      @for (path of filtered; track path.id) {
+        <a class="card hover path-card" [routerLink]="['/learning', path.id]">
+          <div class="row between wrap">
+            <div class="row" style="gap: 8px">
+              <span class="badge" [class]="statusClass(path.status)">{{ statusLabels[path.status] }}</span>
+              <span class="badge badge-slate">{{ difficultyLabels[path.difficulty] || path.difficulty }}</span>
+              @if (path.simulatedAi) {
+                <span class="badge badge-amber">Simulé</span>
+              }
+            </div>
+            <span class="tiny muted">{{ path.doneCount }}/{{ path.taskCount }} tâches</span>
+          </div>
+          <h3 class="mt-2">{{ path.title }}</h3>
+          <div class="tiny muted mt-1">Compétence ciblée : {{ path.skillName }}</div>
+          <div class="progress mt-3" [class.mint]="path.progressPercent === 100">
+            <span [style.width.%]="path.progressPercent"></span>
+          </div>
+          <div class="row between mt-1">
+            <span class="tiny muted">{{ path.progressPercent }}% terminé</span>
+            <span class="tiny" style="color: var(--violet-deep); font-weight: 600">Ouvrir →</span>
+          </div>
+        </a>
+      }
+    </div>
+  }
+</div>
